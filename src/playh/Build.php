@@ -8,6 +8,14 @@ require_once(__DIR__.DIRECTORY_SEPARATOR.'Show.php');
 class Build
 {
 
+    private static $pathRoot;
+
+    private static function getPath()
+    {
+        self::$pathRoot = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
+    }
+ 
+
     private static function createMethod($name,$code = '',Array $params = [])
     {
         $nm = $name;
@@ -222,7 +230,7 @@ class Build
 
         $path = sprintf
                 (
-                    dirname(__DIR__).'%s%s%s%s%s%s%s%s%s%s',
+                    self::getPath().'%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -312,7 +320,7 @@ class Build
 
         $appPath =  sprintf
         (
-            dirname(__DIR__).'%s%s%s%s',
+            self::getPath().'%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -412,7 +420,7 @@ class Build
 
         $path = sprintf
                 (
-                    dirname(__DIR__).'%s%s%s%s%s%s%s%s%s%s',
+                    self::getPath().'%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -487,7 +495,7 @@ class Build
 
         $path = sprintf
                 (
-                    dirname(__DIR__).'%s%s%s%s%s%s%s%s%s%s',
+                    self::getPath().'%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -553,7 +561,7 @@ class Build
 
         $path = sprintf
         (
-            dirname(__DIR__).'%s%s%s%s%s%s%s%s',
+            self::getPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -632,7 +640,7 @@ class Build
 
         $path = sprintf
                 (
-                    dirname(__DIR__).'%s%s%s%s%s%s%s%s%s%s',
+                    self::getPath().'%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -675,7 +683,7 @@ class Build
 
         $appPath =  sprintf
         (
-            dirname(__DIR__).'%s%s%s%s',
+            self::getPath().'%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -684,7 +692,7 @@ class Build
 
         $basePath = sprintf
         (
-            dirname(__DIR__).'%s%s%s%s%s%s%s%s',
+            self::getPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -695,9 +703,9 @@ class Build
             trim($list[1])
         );
 
-        $paths->start = dirname(dirname(__DIR__));
+        $paths->start = self::getPath();
 
-        $paths->routes = sprintf(dirname(__DIR__).'%s%s',DIRECTORY_SEPARATOR,'app');
+        $paths->routes = sprintf(self::getPath().'%s%s',DIRECTORY_SEPARATOR,'app');
 
         $paths->app = $appPath;
 
@@ -757,7 +765,7 @@ class Build
 
         $path =  sprintf
         (
-            dirname(__DIR__).'%s%s%s%s',
+            self::getPath().'%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
