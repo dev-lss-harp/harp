@@ -4,7 +4,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-namespace Harp\app\{{appName}}\modules\{{moduleName}}\controller;
+namespace App\{{appName}}\modules\{{moduleName}}\controller;
 
 use Harp\bin\ArgumentException;
 use Harp\bin\ProcessResponse;

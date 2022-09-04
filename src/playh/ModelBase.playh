@@ -1,5 +1,5 @@
 <?php
-namespace Harp\app\{{appName}}\modules\{{moduleName}}\model;
+namespace App\{{appName}}\modules\{{moduleName}}\model;
 
 use Exception;
 use Harp\bin\ArgumentException;

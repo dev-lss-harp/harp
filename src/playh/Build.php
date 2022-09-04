@@ -7,7 +7,7 @@ require_once(__DIR__.DIRECTORY_SEPARATOR.'Show.php');
 
 class Build
 {
-    private static function getPath()
+    public static function getPath()
     {
         return dirname(dirname(dirname(dirname(dirname(__DIR__)))));
     }
@@ -73,7 +73,7 @@ class Build
 
         $path =  sprintf
         (
-            self::getPath().'%s%s%s%s%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -152,7 +152,7 @@ class Build
 
         $pathKeys =  sprintf
         (
-            self::getPath().'%s%s%s%s%s%s%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -167,7 +167,7 @@ class Build
 
         $pathCerts = sprintf
         (
-            self::getPath().'%s%s%s%s%s%s%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -226,7 +226,7 @@ class Build
 
         $path = sprintf
                 (
-                    self::getPath().'%s%s%s%s%s%s%s%s%s%s',
+                    Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -316,7 +316,7 @@ class Build
 
         $appPath =  sprintf
         (
-            self::getPath().'%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -342,7 +342,7 @@ class Build
 
         $shortName = mb_strtolower(preg_replace("/[^A-Za-z0-9\\/]/",'', $mShort[1]));
   
-        $pathRoutes = sprintf(self::getPath().'%s%s%s%s',DIRECTORY_SEPARATOR,'app',DIRECTORY_SEPARATOR,'routes.json');
+        $pathRoutes = sprintf(Path::getAppPath().'%s%s%s%s',DIRECTORY_SEPARATOR,'app',DIRECTORY_SEPARATOR,'routes.json');
         
         if(!file_exists($pathRoutes))
         {
@@ -416,7 +416,7 @@ class Build
 
         $path = sprintf
                 (
-                    self::getPath().'%s%s%s%s%s%s%s%s%s%s',
+                    Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -491,7 +491,7 @@ class Build
 
         $path = sprintf
                 (
-                    self::getPath().'%s%s%s%s%s%s%s%s%s%s',
+                    Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -557,7 +557,7 @@ class Build
 
         $path = sprintf
         (
-            self::getPath().'%s%s%s%s%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -636,7 +636,7 @@ class Build
 
         $path = sprintf
                 (
-                    self::getPath().'%s%s%s%s%s%s%s%s%s%s',
+                    Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -679,7 +679,7 @@ class Build
 
         $appPath =  sprintf
         (
-            self::getPath().'%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -688,7 +688,7 @@ class Build
 
         $basePath = sprintf
         (
-            self::getPath().'%s%s%s%s%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -699,9 +699,9 @@ class Build
             trim($list[1])
         );
 
-        $paths->start = self::getPath();
+        $paths->start = Path::getAppPath();
 
-        $paths->routes = sprintf(self::getPath().'%s%s',DIRECTORY_SEPARATOR,'app');
+        $paths->routes = sprintf(Path::getAppPath().'%s%s',DIRECTORY_SEPARATOR,'app');
 
         $paths->app = $appPath;
 
@@ -761,7 +761,7 @@ class Build
 
         $path =  sprintf
         (
-            self::getPath().'%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -985,7 +985,7 @@ class Build
 
         $pathApp =  sprintf
         (
-            self::getPath().'%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -994,7 +994,7 @@ class Build
 
         $pathModule =  sprintf
         (
-            self::getPath().'%s%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s%s',
              $pathApp,
              DIRECTORY_SEPARATOR,
             'modules',

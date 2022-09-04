@@ -13,7 +13,12 @@ class Db
     public static function loadEnv()
     {
         self::$DotEnv = new Dotenv();
-        self::$DotEnv->load(dirname(dirname(__DIR__)).'/.env', dirname(dirname(__DIR__)).'/.env-develop');
+        self::$DotEnv->loadEnv(Path::getAppPath().'/.env','env_main');
+        self::$DotEnv->loadEnv(Path::getAppPath().'/.env-develop','env-develop');
+        if(file_exists(Path::getAppPath().'/.env-maintainer'))
+        {
+            self::$DotEnv->loadEnv(Path::getAppPath().'/.env-maintainer','env-maintainer');
+        }
     }
 
 
@@ -72,7 +77,7 @@ class Db
 
         $path = sprintf
         (
-            dirname(__DIR__).'%s%s%s%s%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -147,7 +152,7 @@ class Db
 
         $path = sprintf
         (
-            dirname(__DIR__).'%s%s%s%s%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,

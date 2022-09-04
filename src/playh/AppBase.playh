@@ -1,5 +1,5 @@
 <?php
-namespace Harp\app\{{__name}};
+namespace App\{{__name}};
 
 use Harp\bin\HarpApplication;
 use Harp\lib\HarpDatabase\HarpConnection;

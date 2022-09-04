@@ -1,5 +1,5 @@
 <?php
-namespace Harp\app\{{appName}}\modules\{{moduleName}}\view;
+namespace App\{{appName}}\modules\{{moduleName}}\view;
 
 use Harp\bin\View;
 use Harp\lib\HarpTemplate\HarpTemplate;
