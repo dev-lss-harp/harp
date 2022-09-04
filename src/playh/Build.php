@@ -238,7 +238,7 @@ class Build
       
          $controller = ucfirst(preg_replace("/[^A-Za-z0-9]/",'',$listArgs[2]));   
          
-         $fileControllerBase = \file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'ControllerBase.txt');
+         $fileControllerBase = \file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'ControllerBase.playh');
 
          $args[3] = !empty($args[3]) ? $args[3] : '';
          $args[4] = !empty($args[4]) ? $args[4] : '';
@@ -428,7 +428,7 @@ class Build
            
          $model = ucfirst(preg_replace("/[^A-Za-z0-9]/",'',$listArgs[2]));   
          
-         $fileModelBase = \file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'ModelBase.txt');
+         $fileModelBase = \file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'ModelBase.playh');
  
          $defaultMethod = self::createMethod('index');
          $file = str_ireplace(
@@ -503,7 +503,7 @@ class Build
            
          $view = ucfirst(preg_replace("/[^A-Za-z0-9]/",'',$listArgs[2]));   
          
-         $fileViewBase = \file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'ViewBase.txt');
+         $fileViewBase = \file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'ViewBase.playh');
  
          $defaultMethod = self::createMethod('index');
          $file = str_ireplace(
