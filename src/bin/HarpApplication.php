@@ -28,7 +28,14 @@ abstract class HarpApplication implements HarpApplicationInterface
     protected function __construct(HarpApplicationInterface &$Application,Array $registeredApps,$pathCertificate = null,$pathEncryptionKey = null)
     {
         $this->dotenv = new Dotenv();
-        $this->dotenv->load(dirname(dirname(__DIR__)).'/.env-develop',dirname(dirname(__DIR__)).'/.env');
+        $dtEnvPath = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
+        $this->dotenv->loadEnv($dtEnvPath.'/.env-develop');
+        $this->dotenv->loadEnv($dtEnvPath.'/.env');
+        
+        if(!file_exists($dtEnvPath.'/.env-maintainer'))
+        {
+            $this->dotenv->loadEnv($dtEnvPath.'/.env-maintainer');
+        }
 
 
         $this->Application = $Application;
@@ -38,8 +45,8 @@ abstract class HarpApplication implements HarpApplicationInterface
         $this->extractAppName();
         
 
-        $defaultPathCerts = dirname(__DIR__).DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.mb_strtolower($this->appName).DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'certs';
-        $defaultPathKeys = dirname(__DIR__).DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.mb_strtolower($this->appName).DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'keys';
+        $defaultPathCerts = $dtEnvPath.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.mb_strtolower($this->appName).DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'certs';
+        $defaultPathKeys = $dtEnvPath.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.mb_strtolower($this->appName).DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'keys';
 
         $this->pathCertificate = 
         (empty($pathCertificate) || !is_dir($pathCertificate))
@@ -150,13 +157,14 @@ abstract class HarpApplication implements HarpApplicationInterface
     }
 
     function folder_exist($folder)
-{
-    // Get canonicalized absolute pathname
-    $path = realpath($folder);
+    {
+        // Get canonicalized absolute pathname
+        $path = realpath($folder);
 
-    // If it exist, check if it's a directory
-    return ($path !== false && is_dir($path)) ? $path : false;
-}
+        // If it exist, check if it's a directory
+        return ($path !== false && is_dir($path)) ? $path : false;
+    }
+
     private function defineEncryptionKey()
     {
         if(!is_dir($this->pathEncryptionKeys))
@@ -240,7 +248,7 @@ abstract class HarpApplication implements HarpApplicationInterface
 
     public function getAppNamespace()
     {
-        $nmsp = 'Harp\\app\\'.mb_strtolower($this->getName());
+        $nmsp = 'App\\'.mb_strtolower($this->getName());
         
         return $nmsp;
     }

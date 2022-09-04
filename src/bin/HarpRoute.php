@@ -13,7 +13,7 @@ use Throwable;
 class HarpRoute
 {
 
-    private const __NAMESPACE = '\\Harp\\app';
+    private const __NAMESPACE = '\\App';
     const NAME_JSON_ROUTES = 'routes.json';
     const APP_NAME = 'APP_NAME';
 
@@ -183,7 +183,7 @@ class HarpRoute
         $this->ServerRequest
                 ->getServerConfig()->set(self::PATH_FRAMEWORK,PATH_PROJECT.DIRECTORY_SEPARATOR.'Harp');
         $this->ServerRequest
-                ->getServerConfig()->set(self::PATH_APP,PATH_FRAMEWORK.DIRECTORY_SEPARATOR.'app');
+                ->getServerConfig()->set(self::PATH_APP,dirname(dirname(dirname(dirname(dirname(__DIR__))))).DIRECTORY_SEPARATOR.'app');
         $this->ServerRequest
                 ->getServerConfig()->set(self::PROJECT_NAME,(DOCUMENT_ROOT != PATH_PROJECT) ? trim(basename($pathProject)) : '');
 

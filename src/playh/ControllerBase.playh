@@ -12,7 +12,7 @@ use GuzzleHttp\Psr7\Stream;
 use GuzzleHttp\Utils;
 use Harp\bin\HarpController;
 use Harp\bin\View;
-use Harp\app\{{appName}}\modules\{{moduleName}}\model\{{nameController}}Model;
+use App\{{appName}}\modules\{{moduleName}}\model\{{nameController}}Model;
 
 class {{nameController}}Controller extends HarpController
 {

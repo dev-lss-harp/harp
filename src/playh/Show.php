@@ -20,6 +20,9 @@ class Show
         "\033[34m [delete model] => \033[0m \033[32m  php play-h del::model {name of model} \033[0m",
         "\033[34m [delete view] => \033[0m \033[32m  php play-h del::view {name of view} \033[0m",
         "\033[34m [create migrate] => \033[0m \033[32m  php playh db::create_migration --app={name of app} --name={name of migrate} --table={name of table} \033[0m",
+        "\033[34m [create key] => \033[0m \033[32m  php playh build::key --app=multitenacy --force=true \033[0m",
+        "\033[34m [create cert] => \033[0m \033[32m  php playh build::cert --app=multitenacy --force=true \033[0m",
+        
     ];
 
     private static $msgs = 
