@@ -7,15 +7,11 @@ require_once(__DIR__.DIRECTORY_SEPARATOR.'Show.php');
 
 class Build
 {
-
-    private static $pathRoot;
-
     private static function getPath()
     {
-        self::$pathRoot = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
+        return dirname(dirname(dirname(dirname(dirname(__DIR__)))));
     }
  
-
     private static function createMethod($name,$code = '',Array $params = [])
     {
         $nm = $name;
