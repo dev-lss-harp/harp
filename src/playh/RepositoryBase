@@ -1,0 +1,40 @@
+<?php
+namespace Harp\app\{{appName}}\modules\{{moduleName}}\repository;
+
+use Exception;
+use Harp\bin\ArgumentException;
+use Harp\bin\ArgumentException;
+use Harp\lib\HarpDatabase\drivers\DriverInterface;
+use Harp\lib\HarpDatabase\orm\EntityHandler;
+use Harp\lib\HarpDatabase\orm\EntityHandlerInterface;
+use Harp\lib\HarpDatabase\orm\ORMSelect;
+use Harp\lib\HarpDatabase\orm\ORMInsert;
+
+class {{repositoryName}}Repository
+{
+    private $ConnectionDriver;
+    private $orm;
+    
+    public function __construct(DriverInterface $ConnectionDriver)
+    {
+        $this->ConnectionDriver = $ConnectionDriver;
+
+        $this->orm = $this->ConnectionDriver->getJsonORM()->load(PATH_APP.'/api');   
+    }   
+
+    public function get(EntityHandlerInterface $Entity)
+    {
+        $response = [];
+
+        try
+        {
+            $ObjEntity = $this->orm->mapByEntity($Entity);
+        }
+        catch(\Exception $ex)
+        {
+            throw $ex;
+        }
+
+        return $response;
+    }
+}

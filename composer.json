@@ -1,0 +1,20 @@
+{
+    "name": "dev-lss/harp",
+    "description": "library PHP MVC Framework for modular projects",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Leonardo Souza da Silva",
+            "email": "dev.leonardo.s.s@gmail.com"
+        }
+    ],       
+    "autoload": {
+        "psr-4": {
+            "Harp\\":"src/"
+        }
+    },         
+    "config": {
+        "sort-packages": true
+    }
+}

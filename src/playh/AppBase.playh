@@ -1,0 +1,35 @@
+<?php
+namespace Harp\app\{{__name}};
+
+use Harp\bin\HarpApplication;
+use Harp\lib\HarpDatabase\HarpConnection;
+use Harp\lib\HarpDatabase\ContainnerConn;
+use Exception;
+
+class {{__name}} extends HarpApplication
+{   
+   public function __construct(Array $apps)
+   {
+      parent::__construct($this,$apps);   
+      
+      try
+      {
+
+      }
+      catch(Exception $ex)
+      {
+          throw $ex;
+      }
+   }
+
+   /**
+    * Put your custom settings here in this method, 
+    * basic constants already exist in this method
+    */
+   public function config()
+   {
+      $this->setProperty('api_config',[
+         'base_url' => '172.18.0.1',
+      ]);
+   }
+}

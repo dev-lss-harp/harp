@@ -1,0 +1,72 @@
+<?php
+namespace Harp\app\{{app}}\storage\migrations;
+
+use Illuminate\Database\Capsule\Manager as CapsuleManager;
+use Illuminate\Support\Facades\DB as FDB; 
+
+class {{class_name}}
+{
+    const TABLE_NAME = '{{table_name}}';
+    const BATCH = {{batch}};
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        $sts = false;
+
+        if(!$this->exists())
+        {
+            CapsuleManager::schema()->create(self::TABLE_NAME,function($table){
+                $table->bigIncrements('id');
+                $table->timestamps();
+            });
+
+            $this->updateMigration('create');
+
+            $sts = true;
+        }
+
+        return $sts;
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        $sts = false;
+
+        if($this->exists())
+        {
+            CapsuleManager::schema()->dropIfExists(self::TABLE_NAME);
+            $this->updateMigration('drop');
+            $sts = true;
+        }
+
+        $sts = true;
+    }
+
+    public function exists()
+    {
+        return CapsuleManager::schema()->hasTable(self::TABLE_NAME);
+    }
+
+    private function updateMigration($action)
+    {
+            CapsuleManager::table('migrations')->insert(
+                [
+                  'migration' => __CLASS__,
+                  'table' => self::TABLE_NAME,
+                  'action' => $action,
+                  'batch' => self::BATCH
+                ]
+            );
+
+            print(sprintf('Created table {%s} sucessfull!%s',self::TABLE_NAME,PHP_EOL));
+    }
+}

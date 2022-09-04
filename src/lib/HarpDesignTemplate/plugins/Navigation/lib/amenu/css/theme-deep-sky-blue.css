@@ -1,0 +1,111 @@
+/********* aMenu required ***********/
+
+.amenu-list 
+{
+    margin: 0px;
+    padding: 0px;
+    position: absolute !important;
+    z-index: 30;
+    width:100%;
+    background-color: #49CCED;
+    border-top:0.01rem solid #FFFFFF;
+    height: 41px;
+    font-size:13px;
+}
+.amenu-list li 
+{
+    display: block;
+    margin: 0px;
+    padding: 0px;
+    position: relative !important;
+    vertical-align: bottom;
+    text-align:justify;
+    height:41px;
+    line-height:41px; 
+}
+
+* html .amenu-list li 
+{
+    width: 1px;
+}
+.amenu-list li img
+{
+    display:inline-block;
+    height:16px;
+    width:16px;
+}
+.amenu-list li span
+{
+    display:inline-block;
+    padding-left:0.4em;
+    height:41px; 
+}
+.amenu-list li a:link, .amenu-list li a:visited, .amenu-list li a:hover 
+{
+    display: block;
+    margin: 0px;
+    padding: 0px;
+    white-space: nowrap;
+}
+.amenu-list ul 
+{
+    display: none;
+    margin: 0px;
+    padding: 0px;
+    position: absolute !important;
+    height: 41px;
+}
+.amenu-list ul li 
+{
+    float: none;
+    margin: 0px;
+    padding: 0px;
+}
+/******** aMenu look *******/
+/*mudar bordas:aonde tiver #FFFFFF altera para a cor desejada*/
+.amenu-list li 
+{
+    height: 41px;
+}
+.amenu-list li.parent > a 
+{
+    background: url(images/down_arrow.gif) no-repeat 92% 50%;
+}
+.amenu-list li a:link, .amenu-list li a:visited 
+{
+    height: 41px;
+    height: 41px;
+    text-decoration: none;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    padding: 0px 25px 0px 20px;
+    border-left: 0.01rem solid #FFFFFF;
+    
+}
+.amenu-list li a:hover, .amenu-list li a.active 
+{
+    color: #FFFFFF;
+    background-color: #152533;
+    border-left: 0.01rem solid #FFFFFF;
+}
+.amenu-list ul {
+    border-left: 0.01rem solid #FFFFFF;
+}
+.amenu-list ul li {
+    height: 30px;
+    background-color: #49CCED;
+    border-top: 0.01rem solid #FFFFFF;
+}
+.amenu-list ul li.parent > a {
+    background: url(images/right_arrow.gif) no-repeat 95% 50%;
+}
+.amenu-list ul li a:link, .amenu-list ul li a:visited {
+    height: 30px;
+    line-height: 30px;
+    padding: 0px 40px 0px 20px;
+    border-left: none;
+}
+.amenu-list ul li a:hover, .amenu-list ul li a.active {
+    background-color: #152533;
+    color: #FFFFFF;
+}

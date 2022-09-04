@@ -1,0 +1,16 @@
+<?php
+namespace Harp\app\{{appName}}\modules\{{moduleName}}\model;
+
+use Exception;
+use Harp\bin\ArgumentException;
+use Harp\bin\HarpModel;
+
+class {{nameModel}}Model extends HarpModel
+{
+    public function __construct(Array $request = [])
+    {    
+       parent::__construct();
+    }
+
+    {{defaultMethod}}
+}

@@ -1,0 +1,28 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Harp\app\{{appName}}\modules\{{moduleName}}\entity;
+
+use Harp\bin\ArgumentException;
+use Harp\lib\HarpDatabase\orm\EntityHandlerInterface;
+use Harp\lib\HarpDatabase\orm\EntityHandler;
+
+class {{nameEntity}}Entity extends EntityHandler
+{
+
+    {{entityAttributes}}
+
+    public function __construct({{attributesConstruct}})
+    {
+        parent::__construct($this);
+        {{constructCode}}
+        return $this;
+    }
+
+    {{gettersAndSetters}}
+}

@@ -1,0 +1,12 @@
+        $v = new \Lib\pvt\HarpValidator\HarpValidator();
+        $v->EnumValidator->setLanguage(\Lib\pvt\HarpValidator\EnumValidator::LANGUAGE_PT_BR);
+        $v->isEmail('allezo.lssgmail.com');
+        $v->isBoolean(false,true);
+        $v->isIntegerNumber('a',false);
+        $v->isNaturalNumber('-3');
+        $v->maxlength('o gato doido',11);
+        $v->minlength('cato',5);
+        $v->isNumeric('12,36');
+        $v->isDate('2015-02-25','d/m/Y');
+        $v->isDatetime('2016-02-30 00:32:59');
+        $v->isTime('02:29:60');

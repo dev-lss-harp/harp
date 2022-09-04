@@ -1,0 +1,30 @@
+<?php
+namespace Harp\app\{{app}}\storage\migrations;
+
+class Migrate
+{
+    private $s = {{status}};
+
+    //@sInstances
+
+    //@eInstances
+
+    public function __construct(){}
+
+    public function exists()
+    {
+        return $this->s;
+    }
+
+    public function createUP()
+    {
+        //@sCreate
+
+        //@eCreate
+
+        //@sCreateUP
+
+        //@eCreateUP
+    }
+
+}

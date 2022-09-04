@@ -1,0 +1,45 @@
+<?php
+namespace Harp\app\{{appName}}\modules\{{moduleName}}\view;
+
+use Harp\bin\View;
+use Harp\lib\HarpTemplate\HarpTemplate;
+
+class {{nameView}}View
+{
+    private $View;
+
+    const layout = '{{nameLayout}}';
+
+    public function __construct(View $View)
+    {
+
+        $this->View = $View;
+
+        $View->Template->setPermittedExtensions(['html','php','css','png']);
+
+        //Se passar o segundo parãmetro ele procurará em em LAYOUTS E TEMPLATES 
+        //que tiver o segundo parametro como folder
+
+        $path = PATH_PUBLIC_LAYOUTS_APP.
+        DIRECTORY_SEPARATOR.
+        self::layout. 
+        DIRECTORY_SEPARATOR.
+        $this->View->getProperty('viewGroup');
+ 
+        $View->Template->load
+        (
+            'index.html',
+            $path
+        );
+
+        $View->Template->getReplacer()
+                        ->build(0);
+                                
+    }
+    
+    public function index()
+    {
+        $this->View->Template->show(0);
+    }
+    
+}

@@ -1,0 +1,29 @@
+<?php
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+namespace Harp\app\{{appName}}\modules\{{moduleName}}\controller;
+
+use Harp\bin\ArgumentException;
+use Harp\bin\ProcessResponse;
+use GuzzleHttp\Psr7\Stream;
+use GuzzleHttp\Utils;
+use Harp\bin\HarpController;
+use Harp\bin\View;
+use Harp\app\{{appName}}\modules\{{moduleName}}\model\{{nameController}}Model;
+
+class {{nameController}}Controller extends HarpController
+{
+    private ${{nameController}}Model;
+
+    public function __construct({{attributesConstruct}})
+    {
+        parent::__construct();
+
+        $this->{{nameController}}Model = new {{nameController}}Model();
+    }
+    
+    {{defaultMethod}}
+}

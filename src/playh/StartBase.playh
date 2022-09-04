@@ -1,0 +1,17 @@
+<?php
+use Harp\bin\ProcessResponse;
+use Harp\bin\HarpRoute;
+
+require_once(__DIR__.'/vendor/autoload.php');
+
+$Response = new ProcessResponse();
+
+try 
+{
+        {{apps}}
+} 
+catch (\Throwable $th) 
+{
+    $Response->throwResponseException($th)
+                ->responseToJson();
+}
