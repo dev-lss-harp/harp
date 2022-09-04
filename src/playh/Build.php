@@ -793,6 +793,8 @@ class Build
     public static function app($args)
     {
 
+        clearstatcache();
+
         $countArgs = count($args);
 
         if($countArgs != 3)
@@ -827,8 +829,15 @@ class Build
             Show::showMessage(sprintf(Show::getMessage(003),'build::app'));
         }
         
-        //$name = preg_replace("/[^A-Za-z0-9]/",'', $args[2]);
+        
         $paths = self::getPathsGeneratedApp($listArgs);
+
+        $pIndexFile = $paths->start.DIRECTORY_SEPARATOR.'index.php';
+
+        if(!file_exists($pIndexFile))
+        {
+            mkdir($pIndexFile,0775,true);
+        }
 
         $fileStart = file_get_contents($paths->start.DIRECTORY_SEPARATOR.'index.php');
 
