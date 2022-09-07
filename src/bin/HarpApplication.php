@@ -31,8 +31,8 @@ abstract class HarpApplication implements HarpApplicationInterface
         $dtEnvPath = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
         $this->dotenv->loadEnv($dtEnvPath.'/.env-develop');
         $this->dotenv->loadEnv($dtEnvPath.'/.env');
-        
-        if(!file_exists($dtEnvPath.'/.env-maintainer'))
+ 
+        if(file_exists($dtEnvPath.'/.env-maintainer'))
         {
             $this->dotenv->loadEnv($dtEnvPath.'/.env-maintainer');
         }
