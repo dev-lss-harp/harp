@@ -29,7 +29,7 @@ class Del
 
         $path = sprintf
                 (
-                    dirname(__DIR__).'%s%s%s%s%s%s%s%s%s%s%s%s',
+                    Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -72,7 +72,7 @@ class Del
 
         $path = sprintf
                 (
-                    dirname(__DIR__).'%s%s%s%s%s%s%s%s%s%s%s%s',
+                    Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -114,7 +114,7 @@ class Del
 
         $path = sprintf
                 (
-                    dirname(__DIR__).'%s%s%s%s%s%s%s%s%s%s%s%s',
+                    Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -145,7 +145,7 @@ class Del
 
         $publicFolder = sprintf
         (
-            dirname(__DIR__).'%s%s%s%s%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -182,7 +182,6 @@ class Del
 
     public static function app($args)
     {
-
         if(empty($args[2]))
         {
             Show::showMessage(sprintf(Show::getMessage(003),'Del::app'));
@@ -190,7 +189,7 @@ class Del
 
         $appName = trim(ucfirst($args[2]));
 
-        $fileStart = file_get_contents(dirname(dirname(__DIR__)).DIRECTORY_SEPARATOR.'index.php');
+        $fileStart = file_get_contents(Path::getAppPath().DIRECTORY_SEPARATOR.'index.php');
 
         $startBase = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'StartBase.playh');
 
@@ -214,16 +213,17 @@ class Del
         $strCode .= str_repeat(chr(32),7).'->runApp();'.PHP_EOL;
         $startBase = str_ireplace(['{{apps}}'],[$strCode],$startBase);
 
-        $pRoutes = sprintf(dirname(__DIR__).'%s%s',DIRECTORY_SEPARATOR,'app');
-        $routes = json_decode(file_get_contents($pRoutes.DIRECTORY_SEPARATOR.'routes.json'),true);
-        unset($routes['apps'][$appName]);
+        $pRoutes = sprintf(Path::getAppPath().'%s%s',DIRECTORY_SEPARATOR,'app');
 
+        $routes = json_decode(file_get_contents($pRoutes.DIRECTORY_SEPARATOR.'routes.json'),true);
+
+        unset($routes['apps'][$appName]);
 
         $appNameLower = mb_strtolower($appName);
 
         $appPath =  sprintf
         (
-            dirname(__DIR__).'%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -232,7 +232,7 @@ class Del
 
         $publicFolder = sprintf
         (
-            dirname(__DIR__).'%s%s%s%s%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -247,9 +247,67 @@ class Del
         self::deleteAll($publicFolder);
 
         file_put_contents($pRoutes.DIRECTORY_SEPARATOR.'routes.json',json_encode($routes,JSON_PRETTY_PRINT));
-        file_put_contents(dirname(dirname(__DIR__)).DIRECTORY_SEPARATOR.'index.php',$startBase);
+        file_put_contents(dirname(Path::getAppPath()).DIRECTORY_SEPARATOR.'index.php',$startBase);
      
         Show::showMessage(sprintf(Show::getMessage(501),'app',$appName));
+    }
+
+    public static function api($args)
+    {
+        if(empty($args[2]))
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),'Invalid arguments to delete api!'));
+        }
+
+        $appName = trim(ucfirst($args[2]));
+
+        $fileStart = file_get_contents(Path::getAppPath().DIRECTORY_SEPARATOR.'index.php');
+
+        $startBase = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'StartBase.playh');
+
+        $strApps = '';
+
+        if(preg_match_all('`registerApp\((.*?)\)`',$fileStart,$matches2))
+        {
+            foreach($matches2[1] as $nameApp)
+            {
+                $nApp = str_ireplace(['\''],[''],$nameApp);
+
+                if(trim($nApp) != $appName)
+                {
+                    $strApps .= sprintf('%s->registerApp(%s)%s',str_repeat(chr(32),7),$nameApp,PHP_EOL); 
+                }
+            }
+        }
+
+        $strCode  = '$Route = HarpRoute::load(false)'.PHP_EOL;    
+        $strCode .= $strApps;
+        $strCode .= str_repeat(chr(32),7).'->runApp();'.PHP_EOL;
+        $startBase = str_ireplace(['{{apps}}'],[$strCode],$startBase);
+
+        $pRoutes = sprintf(Path::getAppPath().'%s%s',DIRECTORY_SEPARATOR,'app');
+
+        $routes = json_decode(file_get_contents($pRoutes.DIRECTORY_SEPARATOR.'routes.json'),true);
+
+        unset($routes['apps'][$appName]);
+
+        $appNameLower = mb_strtolower($appName);
+
+        $appPath =  sprintf
+        (
+            Path::getAppPath().'%s%s%s%s',
+            DIRECTORY_SEPARATOR,
+            'app',
+            DIRECTORY_SEPARATOR,
+            $appNameLower
+        );
+
+        self::deleteAll($appPath);
+
+        file_put_contents($pRoutes.DIRECTORY_SEPARATOR.'routes.json',json_encode($routes,JSON_PRETTY_PRINT));
+        file_put_contents(Path::getAppPath().DIRECTORY_SEPARATOR.'index.php',$startBase);
+     
+        Show::showMessage(sprintf(Show::getMessage(501),'api',$appName));
     }
 
 }

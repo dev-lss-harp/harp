@@ -261,8 +261,20 @@ class Build
          $listArgs[3] = !empty($listArgs[3]) ? $listArgs[3] : 'index';
          $listArgs[3] = preg_replace("/[^A-Za-z0-9]/",'',$listArgs[3]);
 
+         $responseReturn = "return (new View('index'));";
+
+         if($isApi)
+         {
+            $responseReturn = 
+            "return (new HarpResponse())->OK
+            (
+                ['response' => sprintf('Controller Api {%s} is working...','".$controller."')],
+                200
+            )->json();";
+         }
+
          $defaultMethod = self::createMethod($listArgs[3],
-                                                       !$isApi ? "return (new View('index'));" : "(new ProcessResponse(200,['response' =>sprintf('Controller Api {%s} is working...','".$controller."')]))->responseToJson();"
+                                                       $responseReturn
                                             );
          $file = str_ireplace(
              ['{{appName}}','{{moduleName}}','{{nameController}}','{{attributesConstruct}}','{{defaultMethod}}'],
@@ -829,7 +841,7 @@ class Build
             Show::showMessage(sprintf(Show::getMessage(003),'build::app'));
         }
         
-        
+
         $paths = self::getPathsGeneratedApp($listArgs);
 
         $pIndexFile = $paths->start.DIRECTORY_SEPARATOR.'index.php';
@@ -844,6 +856,11 @@ class Build
         $fileStart = file_get_contents($paths->start.DIRECTORY_SEPARATOR.'index.php');
 
         $name = ucfirst($listArgs[0]);
+
+        if(!preg_match('`[A-z]`',mb_substr($name,0,1)))
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),'Application names must start with letters from [A-z]!'));
+        }
 
         $matches = [];
 
@@ -967,7 +984,7 @@ class Build
         ],true);
 
         //Create cert
-        self::key([
+        self::cert([
             'play-h',
             'build::cert',
             '--app='.sprintf("%s",$nameLower),
@@ -1202,21 +1219,21 @@ class Build
         self::controller([
             'play-h',
             'build::controller',
-            sprintf("%s/%s/%s",$nameLower,$listArgs[1],$listArgs[2]),
+            sprintf("%s/%s/%s",$name,$listArgs[1],$listArgs[2]),
             '--api=true'
         ],true);
 
         self::model([
             'play-h',
             'build::model',
-            sprintf("%s/%s/%s",$nameLower,$listArgs[1],$listArgs[2])
+            sprintf("%s/%s/%s",$name,$listArgs[1],$listArgs[2])
         ],true);
 
         //Create keys folder
         self::storage([
             'play-h',
             'build::storage',
-             '--app='.sprintf("%s",$nameLower),
+             '--app='.sprintf("%s",$name),
              '--subfolder='.sprintf("%s",'keys')
         ],true);
 
@@ -1224,7 +1241,7 @@ class Build
         self::storage([
             'play-h',
             'build::storage',
-                '--app='.sprintf("%s",$nameLower),
+                '--app='.sprintf("%s",$name),
                 '--subfolder='.sprintf("%s",'certs')
         ],true);
 
@@ -1232,20 +1249,20 @@ class Build
         self::storage([
             'play-h',
             'build::storage',
-                '--app='.sprintf("%s",$nameLower),
+                '--app='.sprintf("%s",$name),
                 '--subfolder='.sprintf("%s",'migrations')
         ],true);
 
         self::key([
             'play-h',
             'build::key',
-            sprintf('--app=%s',$nameLower)
+            sprintf('--app=%s',$name)
         ],true);
 
         self::cert([
             'play-h',
-            'build::key',
-            sprintf('--app=%s',$nameLower)
+            'build::cert',
+            sprintf('--app=%s',$name)
         ],true);
 
 

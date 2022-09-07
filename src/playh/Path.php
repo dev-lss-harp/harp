@@ -6,4 +6,9 @@ class Path
     {
         return dirname(dirname(dirname(dirname(dirname(__DIR__)))));
     }
+
+    public static function getRootPath()
+    {
+        return dirname(dirname(dirname(dirname(dirname(dirname(__DIR__))))));
+    }
 }

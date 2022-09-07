@@ -7,7 +7,7 @@
 namespace App\{{appName}}\modules\{{moduleName}}\controller;
 
 use Harp\bin\ArgumentException;
-use Harp\bin\ProcessResponse;
+use Harp\bin\HarpResponse;
 use GuzzleHttp\Psr7\Stream;
 use GuzzleHttp\Utils;
 use Harp\bin\HarpController;

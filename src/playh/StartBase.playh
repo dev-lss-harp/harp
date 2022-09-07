@@ -1,10 +1,11 @@
 <?php
-use Harp\bin\ProcessResponse;
+use Harp\bin\HarpResponse;
 use Harp\bin\HarpRoute;
 
 require_once(__DIR__.'/vendor/autoload.php');
 
-$Response = new ProcessResponse();
+$Response = new HarpResponse();
+$Response->debugException = true;
 
 try 
 {
@@ -13,5 +14,5 @@ try
 catch (\Throwable $th) 
 {
     $Response->throwResponseException($th)
-                ->responseToJson();
+                ->json();
 }
