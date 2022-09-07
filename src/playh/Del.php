@@ -208,10 +208,7 @@ class Del
             }
         }
 
-        $strCode  = '$Route = HarpRoute::load(false)'.PHP_EOL;    
-        $strCode .= $strApps;
-        $strCode .= str_repeat(chr(32),7).'->runApp();'.PHP_EOL;
-        $startBase = str_ireplace(['{{apps}}'],[$strCode],$startBase);
+        self::createIndexCode($startBase,$strApps);
 
         $pRoutes = sprintf(Path::getAppPath().'%s%s',DIRECTORY_SEPARATOR,'app');
 
@@ -247,9 +244,25 @@ class Del
         self::deleteAll($publicFolder);
 
         file_put_contents($pRoutes.DIRECTORY_SEPARATOR.'routes.json',json_encode($routes,JSON_PRETTY_PRINT));
-        file_put_contents(dirname(Path::getAppPath()).DIRECTORY_SEPARATOR.'index.php',$startBase);
+        file_put_contents(Path::getAppPath().DIRECTORY_SEPARATOR.'index.php',$startBase);
      
         Show::showMessage(sprintf(Show::getMessage(501),'app',$appName));
+    }
+
+    private static function createIndexCode(&$startBase,$strApps)
+    {
+
+        $strCode = '';
+
+        if(!empty($strApps))
+        {  
+            $strCode  = '$Route = HarpRoute::load(false)'.PHP_EOL;
+            $strCode .= $strApps;
+            $strCode .= str_repeat(chr(32),7).'->runApp();'.PHP_EOL;
+        }
+
+        $startBase = str_ireplace(['{{apps}}'],[$strCode],$startBase);
+
     }
 
     public static function api($args)
@@ -280,10 +293,7 @@ class Del
             }
         }
 
-        $strCode  = '$Route = HarpRoute::load(false)'.PHP_EOL;    
-        $strCode .= $strApps;
-        $strCode .= str_repeat(chr(32),7).'->runApp();'.PHP_EOL;
-        $startBase = str_ireplace(['{{apps}}'],[$strCode],$startBase);
+        self::createIndexCode($startBase,$strApps);
 
         $pRoutes = sprintf(Path::getAppPath().'%s%s',DIRECTORY_SEPARATOR,'app');
 

@@ -28,7 +28,7 @@ class Show
         "\033[36m [migration build]   ".PHP_EOL."\033[0m \033[91m db::create_migration \033[92m--app={appName} --name={migrationName} --table={tableName} \033[0m".PHP_EOL,
         "\033[36m [key build]         ".PHP_EOL."\033[0m \033[91m build::key \033[92m--app={appName} \033[093m--force=true \033[0m".PHP_EOL,
         "\033[36m [cert build]        ".PHP_EOL."\033[0m \033[91m build::cert \033[92m--app={appName} \033[093m--force=true \033[0m".PHP_EOL,
-        
+        "\033[36m [server build]      ".PHP_EOL."\033[0m \033[91m build::server \033[093m--port={number} \033[0m".PHP_EOL,
     ];
 
     private static $msgs = 
@@ -37,6 +37,7 @@ class Show
         001 => "\033[31m 001 => The command expects {%s} argument, missing argument=>  %s. \033[0m".PHP_EOL,
         002 => "\033[31m 002 => Invalid number of arguments for command=>  {%s}. \033[0m".PHP_EOL,
         003 => "\033[31m 003 => Syntax error, in command {%s}! \033[0m".PHP_EOL,
+        004 => "\033[92m %s => playh server starting at: %s! \033[0m".PHP_EOL,
         200 => "\033[92m 200 => Sucessfull created {%s} {%s}. \033[0m".PHP_EOL,
         500 => "\033[31m 500 => Error on created {%s} {%s}. \033[0m".PHP_EOL,
         501 => "\033[92m 501 => Sucessfull deleted {%s} {%s}. \033[0m".PHP_EOL,

@@ -6,12 +6,7 @@ use stdClass;
 require_once(__DIR__.DIRECTORY_SEPARATOR.'Show.php');
 
 class Build
-{
-    public static function getPath()
-    {
-        return dirname(dirname(dirname(dirname(dirname(__DIR__)))));
-    }
- 
+{ 
     private static function createMethod($name,$code = '',Array $params = [])
     {
         $nm = $name;
@@ -29,6 +24,22 @@ class Build
             $method .= $ch32.'}'.PHP_EOL;
       
         return $method;        
+    }
+
+    public static function server($args)
+    {
+        $port = '8088';
+
+        if(!empty($args[2]))
+        {
+            $port = preg_replace('`\D`','',$args[2]);
+        }
+
+        $port = is_numeric($port) ? $port : '8088';
+
+        Show::showMessage(sprintf(Show::getMessage(004),'004',sprintf('localhost:%s',$port)),true);
+
+        shell_exec(sprintf('php -S localhost:%s %s',$port,'index.php'));
     }
 
     public static function key($args,$noExit = false)
@@ -689,13 +700,15 @@ class Build
     {
         $paths = new stdClass();
 
+        $appFolder = trim(mb_strtolower($list[0]));
+
         $appPath =  sprintf
         (
             Path::getAppPath().'%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
-            trim($list[0])
+            $appFolder
         );
 
         $basePath = sprintf
@@ -704,7 +717,7 @@ class Build
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
-            trim($list[0]),
+            $appFolder,
             DIRECTORY_SEPARATOR,
             'modules',
             DIRECTORY_SEPARATOR,
@@ -769,7 +782,7 @@ class Build
             Show::showMessage(sprintf(Show::getMessage(003),'Build::storage app not informed!'));
         }
 
-        $nameApp = trim(mb_strtolower($a));
+        $nameApp = trim($a);
 
         $path =  sprintf
         (
@@ -900,8 +913,8 @@ class Build
         ];
 
         $appBase = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'AppBase.playh');
-        $appBase = str_ireplace(['{{__name}}'],[$name],$appBase);
-        
+        $appBase = str_ireplace(['{{__name}}','{{__namespace}}'],[$name,$nameLower],$appBase);
+       
         if(!is_dir($paths->app))
         {
             mkdir($paths->app,0775,true);
@@ -959,6 +972,7 @@ class Build
              '--subfolder='.sprintf("%s",'keys')
         ],true);
 
+     
         //Create certs folder
         self::storage([
             'play-h',
@@ -1194,7 +1208,7 @@ class Build
         ];
 
         $appBase = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'AppBase.playh');
-        $appBase = str_ireplace(['{{__name}}'],[$name],$appBase);
+        $appBase = str_ireplace(['{{__name}}','{{__namespace}}'],[$name,$nameLower],$appBase);
         
         if(!is_dir($paths->app))
         {
@@ -1219,21 +1233,21 @@ class Build
         self::controller([
             'play-h',
             'build::controller',
-            sprintf("%s/%s/%s",$name,$listArgs[1],$listArgs[2]),
+            sprintf("%s/%s/%s",$nameLower,$listArgs[1],$listArgs[2]),
             '--api=true'
         ],true);
 
         self::model([
             'play-h',
             'build::model',
-            sprintf("%s/%s/%s",$name,$listArgs[1],$listArgs[2])
+            sprintf("%s/%s/%s",$nameLower,$listArgs[1],$listArgs[2])
         ],true);
 
         //Create keys folder
         self::storage([
             'play-h',
             'build::storage',
-             '--app='.sprintf("%s",$name),
+             '--app='.sprintf("%s",$nameLower),
              '--subfolder='.sprintf("%s",'keys')
         ],true);
 
@@ -1241,7 +1255,7 @@ class Build
         self::storage([
             'play-h',
             'build::storage',
-                '--app='.sprintf("%s",$name),
+                '--app='.sprintf("%s",$nameLower),
                 '--subfolder='.sprintf("%s",'certs')
         ],true);
 
@@ -1249,20 +1263,20 @@ class Build
         self::storage([
             'play-h',
             'build::storage',
-                '--app='.sprintf("%s",$name),
+                '--app='.sprintf("%s",$nameLower),
                 '--subfolder='.sprintf("%s",'migrations')
         ],true);
 
         self::key([
             'play-h',
             'build::key',
-            sprintf('--app=%s',$name)
+            sprintf('--app=%s',$nameLower)
         ],true);
 
         self::cert([
             'play-h',
             'build::cert',
-            sprintf('--app=%s',$name)
+            sprintf('--app=%s',$nameLower)
         ],true);
 
 
