@@ -950,12 +950,28 @@ class Build
                 '--subfolder='.sprintf("%s",'certs')
         ],true);
 
-        //Create certs folder
+        //Create migration folder
         self::storage([
             'play-h',
             'build::storage',
                 '--app='.sprintf("%s",$nameLower),
                 '--subfolder='.sprintf("%s",'migrations')
+        ],true);
+
+        //Create key
+        self::key([
+            'play-h',
+            'build::key',
+            '--app='.sprintf("%s",$nameLower),
+            '--force=true'
+        ],true);
+
+        //Create cert
+        self::key([
+            'play-h',
+            'build::cert',
+            '--app='.sprintf("%s",$nameLower),
+            '--force=true'
         ],true);
 
 

@@ -5,6 +5,11 @@ class Show
 {
     private static $helper = 
     [
+        "\033[34m [cli] => \033[0m \033[32m php playh {arguments} \n\n \033[0m",
+        "\033[34m [command] => build::app \n \033[0m",
+        "\033[34m [arguments] => --args=name_app/name_module \n \033[0m",
+
+
         "\033[34m [create app] => \033[0m \033[32m php play-h build::app --args={path of app} (Ex: --args=web/home home is module and web is app) \033[0m",
         "\033[34m [create api] => \033[0m \033[32m php play-h build::api --args={appName}/{moduleName}/{controllerName} (Ex: --args=api/v1/home) \033[0m",
         "\033[34m [create controller] => \033[0m \033[32m php play-h build::controller {name of controller with namespace} (Ex: play-h build::controller app/module/controller) \033[0m",
