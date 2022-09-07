@@ -54,6 +54,16 @@ class HarpRoute
     private $translateDomain;
     private $apps;
     private $app;
+    private $basePath;
+    private $resources = 
+            [
+                'css' => 'text/css',
+                'js' => 'text/javascript',
+                'svg'=> 'image/svg+xml',
+                'jpg' => 'image/jpg',
+                'png' => 'image/png',
+                'ico' => 'image/x-icon'
+            ];
 
     private function __construct($translateDomain)
     {
@@ -65,6 +75,8 @@ class HarpRoute
             $this->HarpRequestHeaders = new HarpRequestHeaders();
             $this->ServerRequest = new HarpServerRequest($this->HarpServer,$this->HarpRequestHeaders);
             $this->apps = [];
+
+            $this->basePath = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
         } 
         catch (\Throwable $th) 
         {
@@ -148,7 +160,7 @@ class HarpRoute
     private function publicConstants()
     {
         $this->ServerRequest
-                ->getServerConfig()->set(self::PATH_PUBLIC,PATH_APP.DIRECTORY_SEPARATOR.'public');                
+                ->getServerConfig()->set(self::PATH_PUBLIC,PATH_PROJECT.DIRECTORY_SEPARATOR.'public');                
         $this->ServerRequest
                 ->getServerConfig()->set(self::PATH_PUBLIC_LAYOUTS,PATH_PUBLIC.DIRECTORY_SEPARATOR.'layouts');
         $this->ServerRequest
@@ -176,14 +188,16 @@ class HarpRoute
 
     private function baseConstants()
     {
-        $pathProject =  str_ireplace(['\\'],[DIRECTORY_SEPARATOR],realpath(dirname(dirname(__DIR__))));
+        $basePath = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
+
+        $pathProject =  str_ireplace(['\\'],[DIRECTORY_SEPARATOR],realpath($basePath));
 
         $this->ServerRequest
                 ->getServerConfig()->set(self::PATH_PROJECT,$pathProject);
         $this->ServerRequest
                 ->getServerConfig()->set(self::PATH_FRAMEWORK,PATH_PROJECT.DIRECTORY_SEPARATOR.'Harp');
         $this->ServerRequest
-                ->getServerConfig()->set(self::PATH_APP,dirname(dirname(dirname(dirname(dirname(__DIR__))))).DIRECTORY_SEPARATOR.'app');
+                ->getServerConfig()->set(self::PATH_APP,$basePath.DIRECTORY_SEPARATOR.'app');
         $this->ServerRequest
                 ->getServerConfig()->set(self::PROJECT_NAME,(DOCUMENT_ROOT != PATH_PROJECT) ? trim(basename($pathProject)) : '');
 
@@ -212,7 +226,7 @@ class HarpRoute
 
         $Uri = $this->ServerRequest->getServerRequest()->getUri();
 
-        $this->ServerRequest->getServerConfig()->set(self::__URL_PUBLIC,__URL_BASE.'/Harp/app/public');
+        $this->ServerRequest->getServerConfig()->set(self::__URL_PUBLIC,__URL_BASE.'/public');
         $this->ServerRequest->getServerConfig()->set(self::__URL_PUBLIC_LAYOUTS,__URL_PUBLIC.'/layouts');
         $this->ServerRequest->getServerConfig()->set(self::__URL_PUBLIC_TEMPLATES,__URL_PUBLIC.'/templates');
         $this->ServerRequest->getServerConfig()->set(self::__URL_PUBLIC_LAYOUTS_APP,__URL_PUBLIC.'/layouts/'.$this->app->getDir());
@@ -220,8 +234,6 @@ class HarpRoute
         $this->ServerRequest->getServerConfig()->set(self::__URL_APP_MODULE,__URL_APP.'/'.$this->routeCurrent['module']);
         $this->ServerRequest->getServerConfig()->set(self::__BASE_URL_REQUEST,__URL.(mb_substr($Uri->getPath(),0,1) == '/' ? $Uri->getPath() : '/'.$Uri->getPath()));
         $this->ServerRequest->getServerConfig()->set(self::__URL_REQUEST,__URL.REQUEST_URI);
-
-
     }
 
     private function getRegisteredApp($appName)
@@ -432,7 +444,7 @@ class HarpRoute
        
         if($this->translateDomain &&  empty($searchTerm))
         {
-           
+   
             if(!isset($appsRoutes[$this->routeCurrent['app']]))
             {
                 throw new ArgumentException('app {'.$this->routeCurrent['app'].'} is not defined in {'.self::NAME_JSON_ROUTES.'}!',500);
@@ -462,6 +474,7 @@ class HarpRoute
      
         if($this->translateDomain &&  !empty($searchTerm))
         {
+  
             if(!isset($appsRoutes[$this->routeCurrent['app']]))
             {
                 throw new ArgumentException('app {'.$this->routeCurrent['app'].'} is not defined in {'.self::NAME_JSON_ROUTES.'}!',500);
@@ -548,7 +561,7 @@ class HarpRoute
             $app = mb_strtolower(trim($partsSearchTerm[0]));
 
             $appRoute = $this->getAppRoutesTroughJson($appsRoutes,$app);
-    
+           
             if(empty($appRoute))
             {
                 throw new ArgumentException('app {'.$partsSearchTerm[0].'} is not defined in {'.self::NAME_JSON_ROUTES.'}!',500);
@@ -571,7 +584,7 @@ class HarpRoute
         }
 
         return $response;
-    } 
+    }
     
     private function getRouteByOffTranslateDomain($appsRoutes,$partsSearchTerm)
     {
@@ -586,7 +599,7 @@ class HarpRoute
         else if($countPartsSearchTerm > 1)
         {
             $app = mb_strtolower(trim($partsSearchTerm[0]));
-           
+
             if(!isset($appsRoutes[$app]))
             {
                 throw new ArgumentException('app {'.$partsSearchTerm[0].'} is not defined in {'.self::NAME_JSON_ROUTES.'}!',500);
@@ -740,10 +753,42 @@ class HarpRoute
         }
     }
 
+    public function publicResources(Array $resources = [])
+    {
+        foreach($resources as $ext => $mediatype)
+        {
+            if(!array_key_exists($ext,$this->resources) && !empty($mediatype) && preg_match('`([A-z]*\/[A-z]*)`',$mediatype))
+            {
+                $this->resources[$ext] = $mediatype;
+            }
+        }
+        
+        return $this;
+    }
+
+    private function translateResource($searchTerm)
+    {
+        $ext = trim(pathinfo($searchTerm, PATHINFO_EXTENSION));
+        $folder = \stristr($searchTerm,'public',true);
+
+
+        if(array_key_exists($ext,$this->resources) && $folder !== false)
+        { 
+            $path = $this->basePath.DIRECTORY_SEPARATOR.ltrim($searchTerm,DIRECTORY_SEPARATOR);
+            if(file_exists($path))
+            {
+                header("Content-type:".$this->resources[$ext], true);
+                exit(print(file_get_contents($path)));
+            }
+        }
+    }
+
     private function requestApp()
     {
         $searchTerm = preg_replace('`\?.*`','',REQUEST_URI);
-        
+
+        $this->translateResource($searchTerm);
+
         if(!empty(PROJECT_NAME))
         {
             $searchTerm = preg_replace
@@ -761,11 +806,11 @@ class HarpRoute
         $searchTerm = strpos($searchTerm,DIRECTORY_SEPARATOR) === 0 ? substr($searchTerm,1) : $searchTerm;
 
         $appsRoutes = $this->getAppRoutes();
- 
+
         $this->appTranslate($appsRoutes);
-      
+   
         $this->routeCurrent = $this->getRouteBySearchTerm($appsRoutes,$searchTerm);
-     
+
         if(empty($this->routeCurrent))
         {
             throw new ArgumentException
