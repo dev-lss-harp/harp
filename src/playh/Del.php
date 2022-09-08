@@ -147,8 +147,6 @@ class Del
         (
             Path::getAppPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
-            'app',
-            DIRECTORY_SEPARATOR,
             'public',
             DIRECTORY_SEPARATOR,
             'layouts',
@@ -230,8 +228,6 @@ class Del
         $publicFolder = sprintf
         (
             Path::getAppPath().'%s%s%s%s%s%s%s%s',
-            DIRECTORY_SEPARATOR,
-            'app',
             DIRECTORY_SEPARATOR,
             'public',
             DIRECTORY_SEPARATOR,

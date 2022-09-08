@@ -582,14 +582,11 @@ class Build
         (
             Path::getAppPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
-            'app',
-            DIRECTORY_SEPARATOR,
             'public',
             DIRECTORY_SEPARATOR,
             'layouts',
             DIRECTORY_SEPARATOR,
             $matchesFolder[1]
-
         );
 
         if(!is_dir($path))
@@ -660,8 +657,6 @@ class Build
         $path = sprintf
                 (
                     Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s',
-                    DIRECTORY_SEPARATOR,
-                    'app',
                     DIRECTORY_SEPARATOR,
                     'public',
                     DIRECTORY_SEPARATOR,
