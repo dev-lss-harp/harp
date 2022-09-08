@@ -227,7 +227,7 @@ class Del
 
         $publicFolder = sprintf
         (
-            Path::getAppPath().'%s%s%s%s%s%s%s%s',
+            Path::getAppPath().'%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'public',
             DIRECTORY_SEPARATOR,
