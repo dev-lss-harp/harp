@@ -9,6 +9,8 @@ enum UrlEnum
     case __URL_PUBLIC_LAYOUTS;
     case __URL_PUBLIC_TEMPLATES;
     case __URL_PUBLIC_LAYOUTS_APP;
+    case __URL_PUBLIC_LAYOUTS_MODULE;
+    case __URL_PUBLIC_LAYOUTS_GROUP;
     case __URL_APP;
     case __URL_APP_MODULE;
     case __URL_REQUEST_BASE;
