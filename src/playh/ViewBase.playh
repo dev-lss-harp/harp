@@ -2,35 +2,32 @@
 namespace App\{{appName}}\modules\{{moduleName}}\view;
 
 use Harp\bin\View;
-use Harp\lib\HarpTemplate\HarpTemplate;
+use Harp\enum\ViewEnum;
 
 class {{nameView}}View
 {
     private $View;
-
-    const layout = '{{nameLayout}}';
+    private $Route;
+    
 
     public function __construct(View $View)
     {
 
         $this->View = $View;
 
-        $View->Template->setPermittedExtensions(['html','php','css','png']);
+        $this->Route = $this->View->getProperty(ViewEnum::RouteCurrent->value);
 
-        //Se passar o segundo parãmetro ele procurará em em LAYOUTS E TEMPLATES 
-        //que tiver o segundo parametro como folder
+        /*
+        * View resources are the files you want to allow when loading 
+        * using the framework's template library.
+        */
+        $View->Template->setViewResources(['html','php','css','png']);
 
-        $path = PATH_PUBLIC_LAYOUTS_APP.
-        DIRECTORY_SEPARATOR.
-        self::layout. 
-        DIRECTORY_SEPARATOR.
-        $this->View->getProperty('viewGroup');
- 
-        $View->Template->load
-        (
-            'index.html',
-            $path
-        );
+        /*
+         * The second parameter can be a full path to where the file is
+         * or a directory in one of the configured paths that will be found automatically.
+         */
+        $View->Template->load(sprintf('%s.%s',$this->Route[ViewEnum::Action->value],'html'),$this->Route[ViewEnum::Group->value]);
 
         $View->Template->getReplacer()
                         ->build(0);

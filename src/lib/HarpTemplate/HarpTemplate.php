@@ -3,13 +3,13 @@ namespace Harp\lib\HarpTemplate;
 
 use Exception;
 use Harp\bin\View;
-use Harp\bin\Enum;
-use Harp\bin\ArgumentException;
 
 class HarpTemplate
 {
+
         private $properties;
-        private $permittedExtensions = [
+        private $viewResources = 
+        [
                 'html',
                 'php'
         ];
@@ -25,7 +25,6 @@ class HarpTemplate
             
             $this->properties = new \stdClass();
 
-            
             $this->Replacer = new HarpReplacer($this);
             $this->Repeater = new HarpRepeater($this);
         }
@@ -84,7 +83,7 @@ class HarpTemplate
             if(empty($path) || !is_dir($path))
             {
                 throw new \Exception(
-                    sprintf('Could not determine path to file {%s}, path does not exist or is null. valid paths are: {%s}',$fileName,implode(' OR ',$paths))
+                    sprintf('Could not determine path to file {%s}, path does not exist or is null. valid paths are: {%s}',$fileName,implode(' OR ',$this->paths))
                 );
             }
             else if(!file_exists($path.'/'.$fileName))
@@ -99,7 +98,7 @@ class HarpTemplate
         {
             $extP = explode('.',$fileName);
             $ext = isset($extP[1]) ? $extP[1] : '';
-            return in_array($ext,$this->permittedExtensions);
+            return in_array($ext,$this->viewResources);
         }
 
         public function loadByFullPath($path)
@@ -158,20 +157,20 @@ class HarpTemplate
             return $key;
         }
 
-        public function setPermittedExtensions(Array $exts = [])
+        public function setViewResources(Array $exts = [])
         {
             foreach($exts as $ext)
             {
-                if(!in_array($ext,$this->permittedExtensions) && is_string($ext))
+                if(!in_array($ext,$this->viewResources) && is_string($ext))
                 {
-                    array_push($this->permittedExtensions,$ext);
+                    array_push($this->viewResources,$ext);
                 }
             }
         }
 
-        public function getPermittedExtensions()
+        public function getViewResources()
         {
-            return $this->permittedExtensions;
+            return $this->viewResources;
         }
 
         public function getPaths()
@@ -223,9 +222,9 @@ class HarpTemplate
             
             if(!class_exists($class))
             {
-                throw new ArgumentException(
+                throw new Exception(
                     'Handler {'.$name.'} does not exists!', 
-                    404
+                     500
                 );
             }
 
