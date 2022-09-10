@@ -689,7 +689,40 @@ class Build
         file_put_contents($path.DIRECTORY_SEPARATOR.$l.DIRECTORY_SEPARATOR.$f.'.html',$htmlBase);
 
         Show::showMessage(sprintf(Show::getMessage(200),'layout',$name),$noExit);
-    }   
+    } 
+    
+    public static function template($args,$noExit = false)
+    {
+        if(empty($args[2]))
+        {
+            exit(print(sprintf(Show::getMessage(001),1,'template name')));
+        }
+
+        $name = trim(preg_replace("`[^A-Za-z0-9]`",'', $args[2]));
+
+        if(empty($name))
+        {
+            Show::showMessage(sprintf(Show::getMessage(002),'build::template'));
+        }
+
+        $path = sprintf
+                (
+                    Path::getAppPath().'%s%s%s%s%s%s',
+                    DIRECTORY_SEPARATOR,
+                    'public',
+                    DIRECTORY_SEPARATOR,
+                    'templates',
+                    DIRECTORY_SEPARATOR,
+                    $name
+                );
+
+        if(!is_dir($path))
+        {
+            mkdir($path,0775,true);
+        }
+
+        Show::showMessage(sprintf(Show::getMessage(200),'template',$name),$noExit);
+    }      
 
     private static function getPathsGeneratedApp($list)
     {
@@ -957,6 +990,12 @@ class Build
              '--layout=home',
              '--file=index',
              '--file_content=hello_world'
+        ],true);
+
+        self::template([
+            'play-h',
+            'build::template',
+             sprintf("%s",$listArgs[1]),
         ],true);
 
         //Create keys folder
