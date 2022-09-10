@@ -216,6 +216,31 @@ class HarpRoute
         $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_PUBLIC_LAYOUTS->name,__URL_PUBLIC.'/layouts');
         $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_PUBLIC_TEMPLATES->name,__URL_PUBLIC.'/templates');
         $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_PUBLIC_LAYOUTS_APP->name,__URL_PUBLIC.'/layouts/'.$this->app->getDir());
+
+        $this->ServerRequest->getServerConfig()->set
+        (
+            UrlEnum::__URL_PUBLIC_LAYOUTS_MODULE->name,
+            sprintf
+            (
+                '%s%s%s',
+                __URL_PUBLIC_LAYOUTS_APP,
+                DIRECTORY_SEPARATOR,
+                $this->routeCurrent[RouteEnum::Module->value]
+            )
+        );
+
+        $this->ServerRequest->getServerConfig()->set
+        (
+            UrlEnum::__URL_PUBLIC_LAYOUTS_GROUP->name,
+            sprintf
+            (
+                '%s%s%s',
+                __URL_PUBLIC_LAYOUTS_MODULE,
+                DIRECTORY_SEPARATOR,
+                mb_strtolower($this->routeCurrent[RouteEnum::Group->value])
+            )
+        );
+
         $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_APP->name,__URL_BASE.'/'.str_ireplace(['\\'],['/'],$this->app->getDir()));
         $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_APP_MODULE->name,__URL_APP.'/'.$this->routeCurrent[RouteEnum::Module->value]);
         $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_REQUEST_BASE->name,__URL.(mb_substr($Uri->getPath(),0,1) == '/' ? $Uri->getPath() : '/'.$Uri->getPath()));
