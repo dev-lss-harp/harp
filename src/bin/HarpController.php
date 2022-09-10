@@ -10,9 +10,9 @@ abstract class HarpController
     protected $ServerRequest;
     
     protected function __construct()
-    {
+    {   
         $this->Application = self::$properties['Application'];
-        $this->ServerRequest = $this->getProperty('HttpMessage')->getServerRequest();
+        $this->ServerRequest = $this->getProperty(HarpHttpMessage::class)->getServerRequest();
     }
     
     protected function getProperty($key)

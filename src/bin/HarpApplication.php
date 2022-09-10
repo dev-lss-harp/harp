@@ -3,6 +3,7 @@ namespace Harp\bin;
 
 use Exception;
 use Harp\bin\ArgumentException;
+use Harp\enum\AppEnum;
 use Symfony\Component\Dotenv\Dotenv;
 
 abstract class HarpApplication implements HarpApplicationInterface
@@ -15,28 +16,20 @@ abstract class HarpApplication implements HarpApplicationInterface
     private $Application;
     private $pathCertificate;
     private $pathEncryptionKeys;
-    protected $operatorModeCryptography = 'AES-256-CBC';
     protected $registeredApps = [];
     protected $dotenv;
 
-    private $properties = [
-        'defaultApp'=> false,
-        'config' => null,
-        'publicKey' => null
-    ];
-    
     protected function __construct(HarpApplicationInterface &$Application,Array $registeredApps,$pathCertificate = null,$pathEncryptionKey = null)
     {
         $this->dotenv = new Dotenv();
         $dtEnvPath = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
-        $this->dotenv->loadEnv($dtEnvPath.'/.env-develop');
-        $this->dotenv->loadEnv($dtEnvPath.'/.env');
+        $this->dotenv->loadEnv($dtEnvPath.DIRECTORY_SEPARATOR.AppEnum::ENV_DEVELOP->value);
+        $this->dotenv->loadEnv($dtEnvPath.DIRECTORY_SEPARATOR.AppEnum::ENV->value);
  
-        if(file_exists($dtEnvPath.'/.env-maintainer'))
+        if(file_exists($dtEnvPath.DIRECTORY_SEPARATOR.AppEnum::ENV_MAINTAINER->value))
         {
-            $this->dotenv->loadEnv($dtEnvPath.'/.env-maintainer');
+            $this->dotenv->loadEnv($dtEnvPath.DIRECTORY_SEPARATOR.AppEnum::ENV_MAINTAINER->value);
         }
-
 
         $this->Application = $Application;
         
@@ -45,8 +38,19 @@ abstract class HarpApplication implements HarpApplicationInterface
         $this->extractAppName();
         
 
-        $defaultPathCerts = $dtEnvPath.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.mb_strtolower($this->appName).DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'certs';
-        $defaultPathKeys = $dtEnvPath.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.mb_strtolower($this->appName).DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'keys';
+        $defaultPathCerts = 
+                        $dtEnvPath.DIRECTORY_SEPARATOR.
+                        AppEnum::APP_DIR->value.DIRECTORY_SEPARATOR.
+                        mb_strtolower($this->appName).DIRECTORY_SEPARATOR.
+                        AppEnum::StorageDir->value.DIRECTORY_SEPARATOR.
+                        AppEnum::StorageCertsDir->value;
+
+        $defaultPathKeys = 
+                        $dtEnvPath.DIRECTORY_SEPARATOR.
+                        AppEnum::APP_DIR->value.DIRECTORY_SEPARATOR.
+                        mb_strtolower($this->appName).DIRECTORY_SEPARATOR.
+                        AppEnum::StorageDir->value.DIRECTORY_SEPARATOR.
+                        AppEnum::StorageKeysDir->value;
 
         $this->pathCertificate = 
         (empty($pathCertificate) || !is_dir($pathCertificate))
@@ -70,10 +74,10 @@ abstract class HarpApplication implements HarpApplicationInterface
 
     private function storageProperties()
     {
-        $this->Application->setProperty('publicKey',$this->getPublicKey());
-        $this->Application->setProperty('privateKey',$this->getPrivateKey());
-        $this->Application->setProperty('hashApplication',$this->getHashApplication());
-        $this->Application->setProperty('encryptionKey',$this->getEncryptionKey());
+        $this->Application->setProperty(AppEnum::PublicKey->value,$this->getPublicKey());
+        $this->Application->setProperty(AppEnum::PrivateKey->value,$this->getPrivateKey());
+        $this->Application->setProperty(AppEnum::HashApp->value,$this->getHashApplication());
+        $this->Application->setProperty(AppEnum::EncryptionKey->value,$this->getEncryptionKey());
     }
     
     public function getDir() : string
@@ -87,6 +91,7 @@ abstract class HarpApplication implements HarpApplicationInterface
 
     public function setProperty($key,$property)
     {
+   
         if(!empty($key) && !isset($this->properties[$key]))
         {
             $this->properties[$key] = $property;
@@ -126,12 +131,12 @@ abstract class HarpApplication implements HarpApplicationInterface
     
     public function getPublicKey()
     {
-        return $this->properties['publicKey'];
+        return $this->properties[AppEnum::PublicKey->value];
     }
     
     public function getPrivateKey()
     {
-        return $this->properties['privateKey'];
+        return $this->properties[AppEnum::PrivateKey->value];
     }    
 
     public function getHashApplication()
@@ -141,7 +146,7 @@ abstract class HarpApplication implements HarpApplicationInterface
 
     protected function getEncryptionKey()
     {
-        return $this->properties['encryptionKey'];
+        return $this->properties[AppEnum::EncryptionKey->value];
     }
 
     private function throwOpenSSLError()
@@ -156,15 +161,6 @@ abstract class HarpApplication implements HarpApplicationInterface
         throw new ArgumentException($error);
     }
 
-    function folder_exist($folder)
-    {
-        // Get canonicalized absolute pathname
-        $path = realpath($folder);
-
-        // If it exist, check if it's a directory
-        return ($path !== false && is_dir($path)) ? $path : false;
-    }
-
     private function defineEncryptionKey()
     {
         if(!is_dir($this->pathEncryptionKeys))
@@ -176,12 +172,12 @@ abstract class HarpApplication implements HarpApplicationInterface
              throw new Exception(sprintf('encryption.key not found in {%s}, please check documentation to generate keys!',$this->pathEncryptionKeys));
         }
 
-        $this->properties['encryptionKey'] = file_get_contents($this->pathEncryptionKeys.DIRECTORY_SEPARATOR.'encryption.key');
+        $this->properties[AppEnum::EncryptionKey->value] = file_get_contents($this->pathEncryptionKeys.DIRECTORY_SEPARATOR.'encryption.key');
     }
  
     private function definePublicKey($privateKeyResource)
     {
-        $this->properties['publicKey'] = '';
+        $this->properties[AppEnum::PublicKey->value] = '';
         
         $arrPublicKey = openssl_pkey_get_details($privateKeyResource);
      
@@ -190,9 +186,9 @@ abstract class HarpApplication implements HarpApplicationInterface
             $this->throwOpenSSLError();
         }
        
-        $this->properties['publicKey'] = $arrPublicKey['key'];
+        $this->properties[AppEnum::PublicKey->value] = $arrPublicKey['key'];
 
-        $publicKeyResource = openssl_pkey_get_public($this->properties['publicKey']);
+        $publicKeyResource = openssl_pkey_get_public($this->properties[AppEnum::PublicKey->value]);
    
         if
         (
@@ -235,7 +231,7 @@ abstract class HarpApplication implements HarpApplicationInterface
             $this->throwOpenSSLError();
        }
        
-       $this->properties['privateKey'] = $strPrivateKey;
+       $this->properties[AppEnum::PrivateKey->value] = $strPrivateKey;
        $this->definePublicKey($privateKeyResource);    
     }    
     
@@ -248,24 +244,11 @@ abstract class HarpApplication implements HarpApplicationInterface
 
     public function getAppNamespace()
     {
-        $nmsp = 'App\\'.mb_strtolower($this->getName());
-        
+        $nmsp = sprintf('%s\\%s',AppEnum::APP_NAMESPACE->value,mb_strtolower($this->getName()));
+      
         return $nmsp;
     }
 
-    public function setOperatorModeCryptography($mode)
-    {
-        if(in_array(mb_strtoupper($mode),openssl_get_cipher_methods()))
-        {
-            $this->operatorModeCryptography = mb_strtoupper($mode);
-        }
-    }
-
-    public function getOperatorModeCryptography()
-    {
-        return $this->operatorModeCryptography;
-    }    
-      
     private function renderView($obj,$ServerRequest)
     {
         try

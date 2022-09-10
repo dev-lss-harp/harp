@@ -5,6 +5,7 @@ namespace Harp\bin;
 use Harp\bin\HarpController;
 use Harp\bin\ArgumentException;
 use Harp\bin\View;
+use Harp\enum\RouteEnum;
 use Throwable;
 
 class HarpProcess
@@ -12,8 +13,6 @@ class HarpProcess
     private $Application;
     private $plainExecution;
     private $ReflectionClass;
-    //private $ProcessResponse;
-    private $HarpResponse;
     private $beforeReturn;
     private $routeCurrent;
     
@@ -22,7 +21,7 @@ class HarpProcess
     {
         $this->Application = $Application;
 
-        $this->routeCurrent = $this->Application->getProperty('routeCurrent');
+        $this->routeCurrent = $this->Application->getProperty(RouteEnum::class);
 
         $this->plainExecution = [
             'construct' => [],
@@ -49,7 +48,7 @@ class HarpProcess
     
     private function parseGetArgs($keys,&$plainExecution)
     {
-            $params = $this->Application->getProperty('HttpMessage')->getQuery();
+            $params = $this->Application->getProperty(HarpHttpMessage::class)->getQuery();
 
             $idx = count($plainExecution['arguments']);
             if(isset($keys[0]) && $keys[0] == '*')
@@ -75,9 +74,10 @@ class HarpProcess
 
     private function parsePostArgs($keys,&$plainExecution)
     {
-            $params = $this->Application->getProperty('HttpMessage')->getBody();
+            $params = $this->Application->getProperty(HarpHttpMessage::class)->getBody();
      
             $idx = count($plainExecution['arguments']);
+
             if(isset($keys[0]) && $keys[0] == '*')
             {
                 $plainExecution['arguments'][$idx] = $params;
@@ -207,7 +207,7 @@ class HarpProcess
     //and method action
     private function extractArgsMethods()
     {
-        $route = $this->routeCurrent['current'];
+        $route = $this->routeCurrent[RouteEnum::Current->value];
 
         $this->makeConstructor($route);
   
@@ -291,7 +291,7 @@ class HarpProcess
                 $arguments = $this->getMethodParameters($ReflectionMethod,$arguments);
   
                 $ReflectionMethod->setAccessible(true);
-        
+               
                 $return = $ReflectionMethod->invokeArgs($instance,$arguments); 
         }
         catch(Throwable $th)
@@ -356,7 +356,7 @@ class HarpProcess
    {
         $route = $this->routeCurrent['current'];
         $requestMethod = !empty($route['requestMethod']) ? $route['requestMethod'] : 'GET';
-        $method = $this->Application->getProperty('HttpMessage')->getServerRequest()->getMethod();
+        $method = $this->Application->getProperty(HarpHttpMessage::class)->getServerRequest()->getMethod();
 
         if($method != $requestMethod)
         {
@@ -375,7 +375,7 @@ class HarpProcess
         $this->verifyHttpMethod($plainExecution);
 
         $return = null;
-  
+     
         foreach($plainExecution as $key => $groupPlain)
         {                    
             foreach($groupPlain as $plain)
@@ -383,11 +383,11 @@ class HarpProcess
                 if(!empty($plain))
                 {
                     $plain = $this->injectBeforeReturn($plain);
-                   
+                    
                     $return = $this->executeMethod($instance,$plain['method'],$plain['arguments']);
                     //Guarda o retorno do método para injetar no próximo método
                     $this->storeReturn($return); 
-
+                 
                     if($key != 'construct')
                     {              
                         $response = $this->evaluateReturn($plain,$return);
@@ -454,12 +454,12 @@ class HarpProcess
             $this->instanceAbstractController();
             $this->instanceAbstractModel();
 
-            $controller = $this->routeCurrent['controllerPath'];
-
+            $controller = $this->routeCurrent[RouteEnum::ControllerPath->value];
+     
             $this->ReflectionClass = new \ReflectionClass($controller);
-            
+          
             $instance = $this->ReflectionClass->newInstanceWithoutConstructor();
-            
+          
             if(!$instance instanceof HarpController)
             {
                 throw new ArgumentException('The controller must be an instance of HarpController class.',500);

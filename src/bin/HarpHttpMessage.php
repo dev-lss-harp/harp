@@ -1,10 +1,12 @@
 <?php
 namespace Harp\bin;
 
+use Exception;
 use h4cc\Multipart\ParserSelector;
 use Harp\bin\HarpApplicationInterface;
 use Harp\bin\HarpServerRequest;
 use Harp\bin\ArgumentException;
+use Harp\enum\RouteEnum;
 use Harp\lib\HarpJson\Json;
 
 class HarpHttpMessage
@@ -57,50 +59,34 @@ class HarpHttpMessage
         
         $contentType = '';
 
-        try 
-        {
-            $this->body = $this->HarpServerRequest->getServerRequest()->getParsedBody();
+        $this->body = $this->HarpServerRequest->getServerRequest()->getParsedBody();
 
-            if
-            (
-                !$this->HarpServerRequest->getServerRequest()->hasHeader('Content-Type')
-                &&
-                $this->HarpServerRequest->getServerRequest()->getMethod() != 'GET'
-            )
-            {
-                throw new ArgumentException(
-                    'Content-Type not found. it was not possible to complete the request!',
-                     404,
-                     [
-                         ArgumentException::KEY_TITLE_EXCEPTION => 'Header Not Found',
-                     ]
-                );
-            }
-       
-            $contentType = $this->HarpServerRequest->getServerRequest()->getHeader('Content-Type');
-            $contentType = isset($contentType[0]) ? $contentType[0] : null;
-        
-            if(empty($this->body))
-            {
-                if(!empty($contentType) && preg_match('`\bform-data\b`',$contentType))
-                {
-                    $this->parseFormData($contentType);
-                }
-                else
-                {
-                    $this->parseFromStream($contentType);
-                }
-            }
-
-            $this->sanitizeDefault();
-                    
-        } 
-        catch (\Throwable $th) 
+        if
+        (
+            !$this->HarpServerRequest->getServerRequest()->hasHeader('Content-Type')
+            &&
+            $this->HarpServerRequest->getServerRequest()->getMethod() != 'GET'
+        )
         {
-            (new HarpResponse())
-            ->throwResponseException($th)
-            ->json();
+            throw new Exception('Content-Type not found. it was not possible to complete the request!',500);
         }
+    
+        $contentType = $this->HarpServerRequest->getServerRequest()->getHeader('Content-Type');
+        $contentType = isset($contentType[0]) ? $contentType[0] : null;
+    
+        if(empty($this->body))
+        {
+            if(!empty($contentType) && preg_match('`\bform-data\b`',$contentType))
+            {
+                $this->parseFormData($contentType);
+            }
+            else
+            {
+                $this->parseFromStream($contentType);
+            }
+        }
+
+        $this->sanitizeDefault();
     }
 
     private function sanitizeDefault()
@@ -204,7 +190,7 @@ class HarpHttpMessage
 
         //second parameter array_filter to prevent remove zero values {0}.
         $urlParams = array_values(array_filter($urlParams,function($val){ return $val !== null && $val !== false && $val !== '';}));
-        $keys[] = array_search(PROJECT_NAME,$urlParams);
+        $keys[] = array_search(__PROJECT_NAME,$urlParams);
         $keys[] = array_search(mb_strtolower($this->Application->getName()),$urlParams);
 
         foreach($keys as $key)
@@ -269,7 +255,7 @@ class HarpHttpMessage
 
     private function parsedQuery($Application)
     {        
-        $routeCurrent = $Application->getProperty('routeCurrent');
+        $routeCurrent = $Application->getProperty(RouteEnum::class);
         $alias = $routeCurrent['alias'];
         $route = $routeCurrent['current'];
         $routeArgs = $this->parseArgsFromRoute($route);

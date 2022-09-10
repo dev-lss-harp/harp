@@ -8,27 +8,42 @@
 
 namespace Harp\lib\HarpTemplate;
 
+use Exception;
 use Harp\bin\Enum;
+use Harp\enum\ViewEnum;
+use ReflectionMethod;
 
 class HarpReplacer
 {
-    private const  WORD_KEY_PROP = '@prop';
+    /*private const  WORD_KEY_PROP = '@prop';
     private const  WORD_KEY_CONST = '@const';
     private const  WORD_KEY_PATH = '@path';
     private const  WORD_KEY_VIEW = '@view';
     private const  WORD_KEY_ACTION = '@action';
     private const  WORD_KEY_ANY = '@any';
+    private const FLAG_CONTENT = '@content';*/
     
     private $Template;
+    private $replacementMethods = [];
     
     public function __construct(HarpTemplate $Template)
     {
-        $this->Template = $Template;
         
+        $this->Template = $Template;
+
+        $this->replacementMethods = [
+            ViewEnum::FlagProp->name => ViewEnum::FlagProp->value ,
+            ViewEnum::FlagConst->name => ViewEnum::FlagConst->value ,
+            ViewEnum::FlagPath->name => ViewEnum::FlagPath->value ,
+            ViewEnum::FlagContent->name =>  ViewEnum::FlagContent->value ,
+        ];
+
         $replacement = new \stdClass();
         $replacement->replaceValues = [];
         $replacement->replaceKeys = [];
         $this->Template->setProperty('replacement',$replacement);
+
+
     }
     
     
@@ -37,32 +52,138 @@ class HarpReplacer
         return new HarpReplacerGroup($this->Template);
     }
 
-    private function findDynamicValue($dynamic)
+    /*private function findDynamicValue($dynamic)
     {
         $value = '';
 
         $term = stristr($dynamic,self::WORD_KEY_ACTION);
-        
+
+        dd(self::WORD_KEY_ACTION,$dynamic);
+        preg_match('`\b'.preg_quote(self::WORD_KEY_ACTION).'`is',$dynamic);
+        if(preg_match('`\b'.preg_quote(self::WORD_KEY_ACTION).'`is',$dynamic))
+        {
+            dd('ok');
+        }
         if($term !== false)
         {
             $val = $this->Template->getView()->getProperty('viewName');
-            
+           
             $value = str_ireplace([self::WORD_KEY_ACTION],[$val],$dynamic);
         }
-        
+
         return $value;
-    }
+    }*/
     
+    private function propExec()
+    {
+        $args = func_get_args();
+
+        $prop = $this->Template->getView()->getProperty($args[2]);
+
+        array_push($this->Template->getProperty('replacement')->replaceValues[$args[0]],(!is_null($prop) ? $prop : '')); 
+    }
+
+    private function constExec()
+    {
+        $args = func_get_args();
+        
+        $consts = $this->Template->getView()->getProperty(ViewEnum::ServerVar->value);
+
+        if(isset($consts[$args[2]]))
+        {
+            
+             array_push($this->Template->getProperty('replacement')->replaceValues[$args[0]],$consts[$args[2]]); 
+        }
+    }
+
+    private function pathExec()
+    {
+        $args = func_get_args();
+        $relativePath = $args[2];
+
+        $fileName =  basename($relativePath);
+    
+        $file = '';
+
+        if ( 
+             $this->Template->verifyFileFound(PATH_APP,$relativePath)
+                 &&
+             $this->Template->verifyExtension($fileName)
+        )
+        {
+            $path = PATH_APP.'/'.$relativePath;
+            $dirnName = dirname($path);
+            $fileName = basename($path);
+
+            $k = $this->Template->load($fileName,$dirnName);
+            $fileKey = $this->Template->getTemplateID($k);
+            $this->Template->getReplacer()->build($k);                   
+            $file = $this->Template->getProperty($fileKey);
+       }
+       else
+       {
+            $dirnName = dirname($relativePath);
+            $fileName = basename($relativePath);
+            $k = $this->Template->load($fileName,$dirnName);
+            $fileKey = $this->Template->getTemplateID($k);
+            $this->Template->getReplacer()->build($k);                   
+            $file = $this->Template->getProperty($fileKey);
+
+       }
+
+        array_push($this->Template->getProperty('replacement')->replaceValues[$args[0]],$file);
+    }
+
+    private function contentExec()
+    {
+        $args = func_get_args();
+
+        $ext = $args[2] ?? '';
+
+        $routeCurrent = $this->Template->getView()->getProperty(ViewEnum::RouteCurrent->value);
+
+        if(empty($routeCurrent[ViewEnum::Action->value]))
+        {
+            throw new Exception('View action not found for load content!');
+        }
+
+        $fileName = sprintf('%s.%s',$routeCurrent[ViewEnum::Action->value],$ext);
+
+        $path = sprintf('%s%s%s',PATH_PUBLIC_LAYOUTS_GROUP,DIRECTORY_SEPARATOR,$fileName);
+    
+        if(file_exists($path))
+        {
+            array_push($this->Template->getProperty('replacement')->replaceValues[$args[0]],file_get_contents($path)); 
+        }
+    }
+
     private function findValue($key,Array $parts)
     {        
-
         $this->Template->getProperty('replacement')->replaceValues[$key] = 
            !empty($this->Template->getProperty('replacement')->replaceValues[$key]) ?
            $this->Template->getProperty('replacement')->replaceValues[$key] : 
            [];
-     
+
            if(!empty($parts[1]))
            {
+           
+                $prop = mb_substr(trim($parts[0]),1); 
+       
+                if(in_array($prop,$this->replacementMethods))
+                {
+                    $method = sprintf('%s%s',$prop,'Exec');
+                
+                    if(is_callable([$this,$method]))
+                    {
+                        $RefMethod = new \ReflectionMethod($this,$method);
+                        $RefMethod->invokeArgs($this,[$key,...$parts]);
+                    }
+                }
+
+              /*  dd('ok');
+                exit;
+
+      
                if($parts[0] == self::WORD_KEY_PROP)
                {
                    $prop = $this->Template->getView()->getProperty($parts[1]);
@@ -71,7 +192,7 @@ class HarpReplacer
                }
                else if($parts[0] == self::WORD_KEY_CONST)
                {
-                   $consts = $this->Template->getView()->getProperty(HarpTemplate::__SERVER_VARIABLES);
+                   $consts = $this->Template->getView()->getProperty(ViewEnum::ServerVar->value);
 
                    if(isset($consts[$parts[1]]))
                    {
@@ -120,13 +241,55 @@ class HarpReplacer
                }
                else if($parts[0] == self::WORD_KEY_VIEW)
                {
-                   $path = PATH_VIEW_APP.'/'.$this->findDynamicValue($parts[1]);
 
+                //Não utilizado para nada verificar se não deve tirar
+                    $ext = $parts[2] ?? '';
+                    $prop = $parts[1] ?? null;
+
+                    if(empty($prop))
+                    {
+                        throw new Exception('To load a view it is necessary to inform a dynamic property!',500);
+                    }
+
+                    $prop = trim($prop);
+
+                    $view = $this->Template->getView()->getProperty($prop);
+
+                    if(empty($view))
+                    {
+                        throw new Exception(sprintf('View not found for dynamic property %s!',$prop));
+                    }
+
+                    $view .= sprintf('.%s',$ext);
+
+
+                    $path = sprintf('%s%s%s',PATH_PUBLIC_LAYOUTS_GROUP,DIRECTORY_SEPARATOR,$view);
+                   
                    if(file_exists($path))
                    {
                        array_push($this->Template->getProperty('replacement')->replaceValues[$key],file_get_contents($path)); 
                    }
                }
+               else if($parts[0] == self::FLAG_CONTENT)
+               {
+                    $ext = $parts[1] ?? '';
+
+                    $routeCurrent = $this->Template->getView()->getProperty(ViewEnum::RouteCurrent->value);
+
+                    if(empty($routeCurrent[ViewEnum::Action->value]))
+                    {
+                        throw new Exception('View action not found for load content!');
+                    }
+
+                    $fileName = sprintf('%s.%s',$routeCurrent[ViewEnum::Action->value],$ext);
+ 
+                    $path = sprintf('%s%s%s',PATH_PUBLIC_LAYOUTS_GROUP,DIRECTORY_SEPARATOR,$fileName);
+                
+                    if(file_exists($path))
+                    {
+                        array_push($this->Template->getProperty('replacement')->replaceValues[$key],file_get_contents($path)); 
+                    }
+               }*/
                
            }
     }
@@ -157,18 +320,29 @@ class HarpReplacer
     
     public function parseFile($key)
     {
-        //$pattern = '`[{]{2}(Replacer[@A-z0-9].*?)[:[^}]{2}`is';
+        $params = mb_substr(str_repeat('%s|',count($this->replacementMethods)),0,-1);
 
-        $p = mb_substr(self::WORD_KEY_PATH,1);
-        $c = mb_substr(self::WORD_KEY_CONST,1);
-        $v = mb_substr(self::WORD_KEY_VIEW,1);
-        $a = mb_substr(self::WORD_KEY_ACTION,1);
-
-        $pattern = sprintf('`[{]{2}(Replacer[@](%s|%s|%s|%s).*?)[:[^}]{2}`is',$p,$c,$v,$a);
+        $pattern = sprintf('`[{]{2}(Replacer[@]('.$params.').*?)[:[^}]{2}`is',...array_values($this->replacementMethods));
+        
         $result = [];
      
         preg_match_all($pattern,$this->Template->getProperties()->{$key},$result);
 
+       /* dd($result);
+       
+        
+
+        $p = mb_substr(self::WORD_KEY_PATH,1);
+        $c = mb_substr(self::WORD_KEY_CONST,1);
+        $v = mb_substr(self::WORD_KEY_VIEW,1);
+        $cn = mb_substr(self::FLAG_CONTENT,1);
+        $a = mb_substr(self::WORD_KEY_ACTION,1);
+
+        $pattern = sprintf('`[{]{2}(Replacer[@](%s|%s|%s|%s|%s).*?)[:[^}]{2}`is',$p,$c,$v,$a,$cn);
+        $result = [];
+     
+        preg_match_all($pattern,$this->Template->getProperties()->{$key},$result);
+        dd($pattern,$pattern2,$result,$result2);*/
         //var_dump($result);
         /*echo '<br/>';echo $key;echo '<br/>';
         echo $this->Template->getProperties()->{$key};*/

@@ -8,46 +8,17 @@ use Harp\bin\HarpHttpMessage;
 use Harp\bin\HarpRequestHeaders;
 use Harp\bin\HarpServer;
 use Harp\bin\HarpServerRequest;
+use Harp\enum\__View;
+use Harp\enum\AppEnum;
+use Harp\enum\PathEnum;
+use Harp\enum\ProjectEnum;
+use Harp\enum\RouteEnum;
+use Harp\enum\UrlEnum;
+use Harp\enum\ViewEnum;
 use Throwable;
 
 class HarpRoute
 {
-
-    private const __NAMESPACE = '\\App';
-    const NAME_JSON_ROUTES = 'routes.json';
-    const APP_NAME = 'APP_NAME';
-
-    const PATH_FRAMEWORK = 'PATH_FRAMEWORK';
-    const PATH_PROJECT = 'PATH_PROJECT';
-    const PATH_APP = 'PATH_APP';
-    const PATH_PUBLIC = 'PATH_PUBLIC';
-    const PATH_PUBLIC_LAYOUTS = 'PATH_PUBLIC_LAYOUTS';
-    const PATH_PUBLIC_TEMPLATES = 'PATH_PUBLIC_TEMPLATES';
-    const PATH_PUBLIC_LAYOUTS_APP = 'PATH_PUBLIC_LAYOUTS_APP';
-    const PATH_PUBLIC_TEMPLATES_APP = 'PATH_PUBLIC_TEMPLATES_APP';
-    const PATH_VIEW_APP = 'PATH_VIEW_APP';
-
-    const PATH_STORAGE = 'PATH_STORAGE';
-
-    const __URL = '__URL';
-    const __URL_BASE = '__URL_BASE';
-    const __URL_PUBLIC = '__URL_PUBLIC';
-    const __URL_PUBLIC_LAYOUTS = '__URL_PUBLIC_LAYOUTS';
-    const __URL_PUBLIC_TEMPLATES = '__URL_PUBLIC_TEMPLATES';
-    const __URL_PUBLIC_LAYOUTS_APP = '__URL_PUBLIC_LAYOUTS_APP';
-    const __URL_APP = '__URL_APP';
-    const __URL_APP_MODULE = '__URL_APP_MODULE';
-    const __BASE_URL_REQUEST = '__BASE_URL_REQUEST';
-    const __URL_REQUEST = '__URL_REQUEST';
-
-    const PROJECT_NAME = 'PROJECT_NAME';
-    
-    const POST = 'post';
-    const GET = 'get';
-    const PUT = 'put';
-    const DELETE = 'delete';
-    const PATCH = 'patch';
-
     private static $instance;
     private $ServerRequest;
     private $routeCurrent;
@@ -95,11 +66,11 @@ class HarpRoute
                 throw new Exception("!Application name can not be empty!");
             }
 
-            $nameSpaceApp = self::__NAMESPACE.'\\'.mb_strtolower($app).'\\'.$app;
+            $nameSpaceApp = sprintf('%s%s%s%s%s',AppEnum::APP_NAMESPACE->value,'\\',mb_strtolower($app),'\\',$app);
 
             if(!class_exists($nameSpaceApp))
             {
-                throw new Exception('Could not find class app {'.$app.'}!');
+                throw new Exception('Could not find class app {'.$app.'}!',500);
             }
 
             $lowerNameApp = mb_strtolower($app);
@@ -115,7 +86,7 @@ class HarpRoute
     }    
 
     private function renderView($Response,$ServerRequest)
-    {
+    {    
         if($Response instanceof HarpView)
         {
             $RefView = new \ReflectionClass($Response);
@@ -136,6 +107,7 @@ class HarpRoute
 
     public function runApp()
     {
+      
             //define base constants
             $this->baseConstants();
             //define current app
@@ -147,42 +119,56 @@ class HarpRoute
             //utils constants
             $this->utilsConstants();
             //HttpMessage capture all requests POST, GET, DELETE, PUT e etc.
-            $this->app->setProperty('HttpMessage',(new HarpHttpMessage($this->ServerRequest,$this->app)));
-        
+            $this->app->setProperty(HarpHttpMessage::class,(new HarpHttpMessage($this->ServerRequest,$this->app)));
+            $this->app->setproperty(ViewEnum::Resources->value,$this->resources);
             //call personal config for app
             $this->app->config();
-
+    
             $Process = new HarpProcess($this->app);
             $Response = $Process->run();
+       
             $this->renderView($Response,$this->ServerRequest);
     }
 
     private function publicConstants()
     {
         $this->ServerRequest
-                ->getServerConfig()->set(self::PATH_PUBLIC,PATH_PROJECT.DIRECTORY_SEPARATOR.'public');                
+                ->getServerConfig()->set(PathEnum::PATH_PUBLIC->name,PATH_PROJECT.DIRECTORY_SEPARATOR.'public');                
         $this->ServerRequest
-                ->getServerConfig()->set(self::PATH_PUBLIC_LAYOUTS,PATH_PUBLIC.DIRECTORY_SEPARATOR.'layouts');
+                ->getServerConfig()->set(PathEnum::PATH_PUBLIC_LAYOUTS->name,PATH_PUBLIC.DIRECTORY_SEPARATOR.'layouts');
         $this->ServerRequest
-                ->getServerConfig()->set(self::PATH_PUBLIC_TEMPLATES,PATH_PUBLIC.DIRECTORY_SEPARATOR.'templates');                  
+                ->getServerConfig()->set(PathEnum::PATH_PUBLIC_TEMPLATES->name,PATH_PUBLIC.DIRECTORY_SEPARATOR.'templates');                  
         $this->ServerRequest
-                ->getServerConfig()->set(self::PATH_PUBLIC_LAYOUTS_APP,PATH_PUBLIC_LAYOUTS.DIRECTORY_SEPARATOR.$this->app->getDir());
+                ->getServerConfig()->set(PathEnum::PATH_PUBLIC_LAYOUTS_APP->name,PATH_PUBLIC_LAYOUTS.DIRECTORY_SEPARATOR.$this->app->getDir());
         $this->ServerRequest
-                ->getServerConfig()->set(self::PATH_PUBLIC_TEMPLATES_APP,PATH_PUBLIC_TEMPLATES.DIRECTORY_SEPARATOR.$this->app->getDir());
+                ->getServerConfig()->set(PathEnum::PATH_PUBLIC_TEMPLATES_APP->name,PATH_PUBLIC_TEMPLATES.DIRECTORY_SEPARATOR.$this->app->getDir());
+        $this->ServerRequest
+                ->getServerConfig()->set(PathEnum::PATH_PUBLIC_LAYOUTS_MODULE->name,PATH_PUBLIC_LAYOUTS_APP.DIRECTORY_SEPARATOR.$this->routeCurrent[RouteEnum::Module->value]);
+        $this->ServerRequest
+                ->getServerConfig()->set(PathEnum::PATH_PUBLIC_TEMPLATES_MODULE->name,PATH_PUBLIC_TEMPLATES_APP.DIRECTORY_SEPARATOR.$this->routeCurrent[RouteEnum::Module->value]);       
         
-        $pathView = PATH_APP.
-                            DIRECTORY_SEPARATOR.
-                            $this->app->getDir().
-                            DIRECTORY_SEPARATOR.
-                            'modules'.
-                            DIRECTORY_SEPARATOR.
-                            $this->routeCurrent['module'].
-                            DIRECTORY_SEPARATOR.
-                            'view';
+        $group = mb_strtolower($this->routeCurrent[RouteEnum::Group->value]);
+        
+        $this->ServerRequest
+                ->getServerConfig()->set(PathEnum::PATH_PUBLIC_LAYOUTS_GROUP->name,PATH_PUBLIC_LAYOUTS_MODULE.DIRECTORY_SEPARATOR.$group);
+        $this->ServerRequest
+                ->getServerConfig()->set(PathEnum::PATH_PUBLIC_TEMPLATES_GROUP->name,PATH_PUBLIC_TEMPLATES_MODULE.DIRECTORY_SEPARATOR.$group); 
 
-            $this->ServerRequest
-                ->getServerConfig()
-                    ->set(self::PATH_VIEW_APP,$pathView);
+        $pathView = sprintf(PATH_APP.'%s%s%s%s%s%s%s%s',
+                        DIRECTORY_SEPARATOR,
+                        $this->app->getDir(),
+                        DIRECTORY_SEPARATOR,
+                        'modules',
+                        DIRECTORY_SEPARATOR,
+                        $this->routeCurrent[RouteEnum::Module->value],
+                        DIRECTORY_SEPARATOR,
+                        'view'
+    
+        );
+                           
+        $this->ServerRequest
+            ->getServerConfig()
+                ->set(PathEnum::PATH_VIEW_APP->name,$pathView);
 
     }    
 
@@ -193,47 +179,47 @@ class HarpRoute
         $pathProject =  str_ireplace(['\\'],[DIRECTORY_SEPARATOR],realpath($basePath));
 
         $this->ServerRequest
-                ->getServerConfig()->set(self::PATH_PROJECT,$pathProject);
+                ->getServerConfig()->set(PathEnum::PATH_PROJECT->name,$pathProject);
         $this->ServerRequest
-                ->getServerConfig()->set(self::PATH_FRAMEWORK,PATH_PROJECT.DIRECTORY_SEPARATOR.'Harp');
+                ->getServerConfig()->set(PathEnum::PATH_FRAMEWORK->name,PATH_PROJECT.DIRECTORY_SEPARATOR.'Harp');
         $this->ServerRequest
-                ->getServerConfig()->set(self::PATH_APP,$basePath.DIRECTORY_SEPARATOR.'app');
+                ->getServerConfig()->set(PathEnum::PATH_APP->name,$basePath.DIRECTORY_SEPARATOR.'app');
         $this->ServerRequest
-                ->getServerConfig()->set(self::PROJECT_NAME,(DOCUMENT_ROOT != PATH_PROJECT) ? trim(basename($pathProject)) : '');
+                ->getServerConfig()->set(ProjectEnum::PROJECT_NAME->value,(DOCUMENT_ROOT != PATH_PROJECT) ? trim(basename($pathProject)) : '');
 
     }
 
     private function utilsConstants()
     {
          $this->ServerRequest
-            ->getServerConfig()->set(self::PATH_STORAGE,PATH_APP.DIRECTORY_SEPARATOR.$this->routeCurrent['app'].DIRECTORY_SEPARATOR.'storage');
+            ->getServerConfig()->set(PathEnum::PATH_STORAGE->name,PATH_APP.DIRECTORY_SEPARATOR.$this->routeCurrent[RouteEnum::App->value].DIRECTORY_SEPARATOR.'storage');
     }
 
 
     private function urlConstants()
     {
-        $this->ServerRequest->getServerConfig()->set(self::__URL, 
+        $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL->name, 
             str_ireplace(['\\'],['/'],REQUEST_PROTOCOL.'://'.HTTP_HOST)
         );
 
         //remove slash from last
-        $urlBase =  (strrpos(__URL.'/'.PROJECT_NAME,'/') === mb_strlen(__URL.'/'.PROJECT_NAME) - 1) 
+        $urlBase =  (strrpos(__URL.'/'.__PROJECT_NAME,'/') === mb_strlen(__URL.'/'.__PROJECT_NAME) - 1) 
                     ? 
-                    mb_substr(__URL.'/'.PROJECT_NAME,0,-1) 
-                    : __URL.'/'.PROJECT_NAME;
+                    mb_substr(__URL.'/'.__PROJECT_NAME,0,-1) 
+                    : __URL.'/'.__PROJECT_NAME;
 
-        $this->ServerRequest->getServerConfig()->set(self::__URL_BASE, $urlBase);
+        $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_BASE->name, $urlBase);
 
         $Uri = $this->ServerRequest->getServerRequest()->getUri();
 
-        $this->ServerRequest->getServerConfig()->set(self::__URL_PUBLIC,__URL_BASE.'/public');
-        $this->ServerRequest->getServerConfig()->set(self::__URL_PUBLIC_LAYOUTS,__URL_PUBLIC.'/layouts');
-        $this->ServerRequest->getServerConfig()->set(self::__URL_PUBLIC_TEMPLATES,__URL_PUBLIC.'/templates');
-        $this->ServerRequest->getServerConfig()->set(self::__URL_PUBLIC_LAYOUTS_APP,__URL_PUBLIC.'/layouts/'.$this->app->getDir());
-        $this->ServerRequest->getServerConfig()->set(self::__URL_APP,__URL_BASE.'/'.str_ireplace(['\\'],['/'],$this->app->getDir()));
-        $this->ServerRequest->getServerConfig()->set(self::__URL_APP_MODULE,__URL_APP.'/'.$this->routeCurrent['module']);
-        $this->ServerRequest->getServerConfig()->set(self::__BASE_URL_REQUEST,__URL.(mb_substr($Uri->getPath(),0,1) == '/' ? $Uri->getPath() : '/'.$Uri->getPath()));
-        $this->ServerRequest->getServerConfig()->set(self::__URL_REQUEST,__URL.REQUEST_URI);
+        $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_PUBLIC->name,__URL_BASE.'/public');
+        $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_PUBLIC_LAYOUTS->name,__URL_PUBLIC.'/layouts');
+        $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_PUBLIC_TEMPLATES->name,__URL_PUBLIC.'/templates');
+        $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_PUBLIC_LAYOUTS_APP->name,__URL_PUBLIC.'/layouts/'.$this->app->getDir());
+        $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_APP->name,__URL_BASE.'/'.str_ireplace(['\\'],['/'],$this->app->getDir()));
+        $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_APP_MODULE->name,__URL_APP.'/'.$this->routeCurrent[RouteEnum::Module->value]);
+        $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_REQUEST_BASE->name,__URL.(mb_substr($Uri->getPath(),0,1) == '/' ? $Uri->getPath() : '/'.$Uri->getPath()));
+        $this->ServerRequest->getServerConfig()->set(UrlEnum::__URL_REQUEST->name,__URL.REQUEST_URI);
     }
 
     private function getRegisteredApp($appName)
@@ -248,7 +234,7 @@ class HarpRoute
             $appInstance = new $nameSpaceApp($this->apps);
 
             $this->ServerRequest
-            ->getServerConfig()->set(self::APP_NAME,$appInstance->getName()); 
+            ->getServerConfig()->set(AppEnum::APP_NAME->value,$appInstance->getName()); 
         }
 
         return $appInstance;
@@ -299,46 +285,34 @@ class HarpRoute
 
         $appArgs = [];
 
-        try
+        $path = $this->routeCurrent[RouteEnum::Path->value];
+
+        $p = explode('/',$path);
+
+        if(count($p) != 4)
         {
-            $path = $this->routeCurrent['path'];
-
-            $p = explode('/',$path);
-
-            if(count($p) != 4)
-            {
-                throw new ArgumentException
-                (
-                    'Malformed route path in routes.json, path: {'.$path.'} is invalid!',
-                    500, 
-                    [
-                        ArgumentException::KEY_TITLE_EXCEPTION => ArgumentException::INTERNAL_SERVER_ERROR_TITLE,
-                        ArgumentException::KEY_TYPE_EXCEPTION => ArgumentException::ERROR_TYPE_EXCEPTION
-                    ]
-                );
-            }
-
-            $p[2] = ucfirst($p[2]);
-            
-            $appArgs = [
-                'module' => trim($p[1]),
-                'group' => trim($p[2]),
-                'controller' => trim($p[2]).'Controller',
-                'action' => trim($p[3]),
-            ];
-
-            $appArgs['controllerPath'] =  
-                        $this->app->getAppNamespace()
-                        .'\\modules'
-                        .'\\'.$appArgs['module']
-                        .'\\controller'
-                        .'\\'.$appArgs['controller'];                            
-
+            throw new Exception
+            (
+                'Malformed route path in routes.json, path: {'.$path.'} is invalid!',
+                500, 
+            );
         }
-        catch(\Exception $ex)
-        {
-            throw $ex; 
-        }
+
+        $p[2] = ucfirst($p[2]);
+        
+        $appArgs = [
+            RouteEnum::Module->value => trim($p[1]),
+            RouteEnum::Group->value => trim($p[2]),
+            RouteEnum::Controller->value => trim($p[2]).'Controller',
+            RouteEnum::Action->value => trim($p[3]),
+        ];
+
+        $appArgs[RouteEnum::ControllerPath->value] =  
+                    $this->app->getAppNamespace()
+                    .'\\modules'
+                    .'\\'.$appArgs[RouteEnum::Module->value]
+                    .'\\controller'
+                    .'\\'.$appArgs[RouteEnum::Controller->value];                            
 
         return $appArgs;
     }
@@ -445,24 +419,40 @@ class HarpRoute
         if($this->translateDomain &&  empty($searchTerm))
         {
    
-            if(!isset($appsRoutes[$this->routeCurrent['app']]))
+            if(!isset($appsRoutes[$this->routeCurrent[RouteEnum::App->value]]))
             {
-                throw new ArgumentException('app {'.$this->routeCurrent['app'].'} is not defined in {'.self::NAME_JSON_ROUTES.'}!',500);
+                throw new Exception('app {'.$this->routeCurrent[RouteEnum::App->value].'} is not defined in {'.ProjectEnum::NAME_JSON_ROUTES->value.'}!',500);
             }
     
-            $appRoute = $appsRoutes[$this->routeCurrent['app']];
+            $appRoute = $appsRoutes[$this->routeCurrent[RouteEnum::App->value]];
     
-            if(!isset($appRoute[$this->routeCurrent['app']]))
+            if(!isset($appRoute[$this->routeCurrent[RouteEnum::App->value]]))
             {
-                throw new ArgumentException('default route {'.$this->routeCurrent['app'].'} not found in {'.self::NAME_JSON_ROUTES.'}!',404);
+                throw new Exception('default route {'.$this->routeCurrent[RouteEnum::App->value].'} not found in {'.ProjectEnum::NAME_JSON_ROUTES->value.'}!',404);
             }
-        
-            $response = [
-                'app' => $this->routeCurrent['app'],
-                'path' => $appRoute[$this->routeCurrent['app']]['path'],
-                'alias' => $this->routeCurrent['app'],
-                'current' => $appRoute,
+
+            $keys = [
+                RouteEnum::App->value,
+                RouteEnum::Path->value,
+                RouteEnum::Alias->value,
+                RouteEnum::Current->value,
             ];
+
+            $values = [
+                $this->routeCurrent[RouteEnum::App->value],
+                $appRoute[$this->routeCurrent[RouteEnum::App->value]]['path'],
+                $this->routeCurrent[RouteEnum::App->value],
+                $appRoute,
+            ];
+
+            $response = array_combine($keys,$values);
+   
+            /*$response = [
+                'app' => $this->routeCurrent[RouteEnum::App->value],
+                'path' => $appRoute[$this->routeCurrent[RouteEnum::App->value]]['path'],
+                'alias' => $this->routeCurrent[RouteEnum::App->value],
+                'current' => $appRoute,
+            ];*/
         }
 
         return $response;
@@ -475,24 +465,41 @@ class HarpRoute
         if($this->translateDomain &&  !empty($searchTerm))
         {
   
-            if(!isset($appsRoutes[$this->routeCurrent['app']]))
+            if(!isset($appsRoutes[$this->routeCurrent[RouteEnum::App->value]]))
             {
-                throw new ArgumentException('app {'.$this->routeCurrent['app'].'} is not defined in {'.self::NAME_JSON_ROUTES.'}!',500);
+                throw new Exception('app {'.$this->routeCurrent[RouteEnum::App->value].'} is not defined in {'.ProjectEnum::NAME_JSON_ROUTES->value.'}!',500);
             }
     
-            $appRoute = $appsRoutes[$this->routeCurrent['app']];
+            $appRoute = $appsRoutes[$this->routeCurrent[RouteEnum::App->value]];
     
             if(!isset($appRoute[$searchTerm]))
             {
-                throw new ArgumentException('route {'.$searchTerm.'} not found in {'.self::NAME_JSON_ROUTES.'}!',404);
+                throw new Exception('route {'.$searchTerm.'} not found in {'.ProjectEnum::NAME_JSON_ROUTES->value.'}!',404);
             }
+
+
+            $keys = [
+                RouteEnum::App->value,
+                RouteEnum::Path->value,
+                RouteEnum::Alias->value,
+                RouteEnum::Current->value,
+            ];
+
+            $values = [
+                $this->routeCurrent[RouteEnum::App->value],
+                $appRoute[$searchTerm]['path'],
+                $searchTerm,
+                $appRoute,
+            ];
+
+            $response = array_combine($keys,$values);
         
-            $response = [
-                'app' => $this->routeCurrent['app'],
+           /* $response = [
+                'app' => $this->routeCurrent[RouteEnum::App->value],
                 'path' => $appRoute[$searchTerm]['path'],
                 'alias' => $searchTerm,
                 'current' => $appRoute,
-            ];
+            ];*/
         }
 
         return $response;
@@ -554,7 +561,7 @@ class HarpRoute
   
         if($countPartsSearchTerm < 1 && !$this->translateDomain)
         {
-            throw new ArgumentException('translate domain is off, is not possible determinate app!',403);
+            throw new Exception('translate domain is off, is not possible determinate app!',403);
         }
         else if($countPartsSearchTerm == 1)
         {
@@ -564,23 +571,33 @@ class HarpRoute
            
             if(empty($appRoute))
             {
-                throw new ArgumentException('app {'.$partsSearchTerm[0].'} is not defined in {'.self::NAME_JSON_ROUTES.'}!',500);
+                throw new Exception('app {'.$partsSearchTerm[0].'} is not defined in {'.ProjectEnum::NAME_JSON_ROUTES->value.'}!',500);
             }
 
             $appKeyDefaultRoute = isset($appRoute[$app]) ? $app : mb_strtolower($app);
             
             if(!isset($appRoute[$appKeyDefaultRoute]))
             {
-                throw new ArgumentException('route {'.$app.'} not found in {'.self::NAME_JSON_ROUTES.'}!',404);
+                throw new Exception('route {'.$app.'} not found in {'.ProjectEnum::NAME_JSON_ROUTES->value.'}!',404);
             }
-        
-            $response = [
-                'app' => $app,
-                'app_key_default_route' => $appKeyDefaultRoute,
-                'path' => $appRoute[$appKeyDefaultRoute]['path'],
-                'alias' => implode('/',$partsSearchTerm),
-                'current' => $appRoute[$appKeyDefaultRoute],
+
+            $keys = [
+                RouteEnum::App->value,
+                RouteEnum::AppKeyDefault->value,
+                RouteEnum::Path->value,
+                RouteEnum::Alias->value,
+                RouteEnum::Current->value,
             ];
+
+            $values = [
+                $app,
+                $appKeyDefaultRoute,
+                $appRoute[$appKeyDefaultRoute]['path'],
+                implode('/',$partsSearchTerm),
+                $appRoute[$appKeyDefaultRoute],
+            ];
+
+            $response = array_combine($keys,$values);
         }
 
         return $response;
@@ -594,7 +611,7 @@ class HarpRoute
 
         if($countPartsSearchTerm < 1 && !$this->translateDomain)
         {
-            throw new ArgumentException('translate domain is off, is not possible determinate app!',403);
+            throw new Exception('translate domain is off, is not possible determinate app!',403);
         }
         else if($countPartsSearchTerm > 1)
         {
@@ -602,7 +619,7 @@ class HarpRoute
 
             if(!isset($appsRoutes[$app]))
             {
-                throw new ArgumentException('app {'.$partsSearchTerm[0].'} is not defined in {'.self::NAME_JSON_ROUTES.'}!',500);
+                throw new Exception('app {'.$partsSearchTerm[0].'} is not defined in {'.ProjectEnum::NAME_JSON_ROUTES->value.'}!',500);
             }
     
             $appRoute = $appsRoutes[$app];
@@ -613,15 +630,31 @@ class HarpRoute
 
             if(!isset($appRoute[$searchTerm]))
             {
-                throw new ArgumentException('route {'.$searchTerm.'} not found in {'.self::NAME_JSON_ROUTES.'}!',404);
+                throw new Exception('route {'.$searchTerm.'} not found in {'.ProjectEnum::NAME_JSON_ROUTES->value.'}!',404);
             }
+
+            $keys = [
+                RouteEnum::App->value,
+                RouteEnum::Path->value,
+                RouteEnum::Alias->value,
+                RouteEnum::Current->value,
+            ];
+
+            $values = [
+                $app,
+                $appRoute[$searchTerm]['path'],
+                implode('/',$partsSearchTerm),
+                $appRoute[$searchTerm],
+            ];
+
+            $response = array_combine($keys,$values);
     
-            $response = [
+            /*$response = [
                 'app' => $app,
                 'path' => $appRoute[$searchTerm]['path'],
                 'alias' => implode('/',$partsSearchTerm),
                 'current' => $appRoute[$searchTerm],
-            ];
+            ];*/
         }
 
         return $response;
@@ -645,13 +678,15 @@ class HarpRoute
             $partsSearchTerm = array_filter(array_values(explode('/',$searchTerm)));
            
             $response = $this->getDefaultRouteByOffTranslateDomain($appsRoutes,$partsSearchTerm);
-     
+           
             if(empty($response))
             {
                 $response = $this->getRouteByOffTranslateDomain($appsRoutes,$partsSearchTerm);
             }
         }
 
+  
+      
         return $response;
     }
 
@@ -663,7 +698,7 @@ class HarpRoute
         $searchTerm = trim($searchTerm);
       
         $response = $this->getRoute($appsRoutes,$searchTerm);
-
+      
         return $response;
     }
 
@@ -676,14 +711,14 @@ class HarpRoute
         try
         {
 
-            $routesJsonPath =  PATH_APP.DIRECTORY_SEPARATOR.self::NAME_JSON_ROUTES;
+            $routesJsonPath =  PATH_APP.DIRECTORY_SEPARATOR.ProjectEnum::NAME_JSON_ROUTES->value;
 
             if(!file_exists($routesJsonPath))
             {
-                throw new ArgumentException
+                throw new Exception
                 (
                     sprintf('file {%s} was not found at path: {%s}.',
-                            self::NAME_JSON_ROUTES, 
+                            ProjectEnum::NAME_JSON_ROUTES->value, 
                             PATH_APP
                         ),
                     404
@@ -696,7 +731,7 @@ class HarpRoute
      
             if(!isset($routes['apps']))
             {
-                throw new ArgumentException('define apps in {'.self::NAME_JSON_ROUTES.'}!',404);
+                throw new Exception('define apps in {'.ProjectEnum::NAME_JSON_ROUTES->value.'}!',404);
             }
 
             //to lower all primary keys keys
@@ -730,14 +765,10 @@ class HarpRoute
 
             if(empty($appName))
             {
-                throw new ArgumentException
+                throw new Exception
                 (
                     'Url does not contain a term identifying the application, are you sure you want to use translate domain as true?!',
-                     404, 
-                     [
-                         ArgumentException::KEY_TITLE_EXCEPTION => ArgumentException::NOT_FOUND_TITLE,
-                         ArgumentException::KEY_TYPE_EXCEPTION => ArgumentException::ERROR_TYPE_EXCEPTION
-                     ]
+                     404
                 );
             }
         }
@@ -749,7 +780,7 @@ class HarpRoute
     {
         if($this->translateDomain)
         {
-            $this->routeCurrent['app'] = $this->getAppBySearchUrl($appsRoutes);
+            $this->routeCurrent[RouteEnum::App->value] = $this->getAppBySearchUrl($appsRoutes);
         }
     }
 
@@ -789,14 +820,14 @@ class HarpRoute
 
         $this->translateResource($searchTerm);
 
-        if(!empty(PROJECT_NAME))
+        if(!empty(__PROJECT_NAME))
         {
             $searchTerm = preg_replace
             (
                 [
-                    '`\/'.PROJECT_NAME.'\/\b`is',
-                    '`\b'.PROJECT_NAME.'\/\b`is',
-                    '`\b'.PROJECT_NAME.'\b`is'
+                    '`\/'.__PROJECT_NAME.'\/\b`is',
+                    '`\b'.__PROJECT_NAME.'\/\b`is',
+                    '`\b'.__PROJECT_NAME.'\b`is'
                 ],
                 ['','',''],
                 $searchTerm
@@ -813,24 +844,20 @@ class HarpRoute
 
         if(empty($this->routeCurrent))
         {
-            throw new ArgumentException
+            throw new Exception
             (
                 'Route not found or not configured!',
-                 404, 
-                 [
-                     ArgumentException::KEY_TITLE_EXCEPTION => ArgumentException::NOT_FOUND_TITLE,
-                     ArgumentException::KEY_TYPE_EXCEPTION => ArgumentException::ERROR_TYPE_EXCEPTION
-                 ]
+                 404
             );
         }
 
-        $this->app = $this->getRegisteredApp($this->routeCurrent['app']);
+        $this->app = $this->getRegisteredApp($this->routeCurrent[RouteEnum::App->value]);
 
         if(empty($this->app))
         {
-            throw new ArgumentException
+            throw new Exception
             (
-                'app {'.(!empty($this->routeCurrent['app']) ? $this->routeCurrent['app'] : '').'} not found, configuration in routes.json is correct?!',
+                'app {'.(!empty($this->routeCurrent[RouteEnum::App->value]) ? $this->routeCurrent[RouteEnum::App->value] : '').'} not found, configuration in routes.json is correct?!',
                  500
             );
         }
@@ -839,18 +866,14 @@ class HarpRoute
 
         $this->routeCurrent = array_merge($this->routeCurrent,$appArgs);
 
-        $this->app->setProperty('routeCurrent',$this->routeCurrent);     
+        $this->app->setProperty(RouteEnum::class,$this->routeCurrent);     
       
         if(empty($this->app))
         {
-            throw new ArgumentException
+            throw new Exception
             (
                 'Route not found!',
-                404,
-                 [
-                     ArgumentException::KEY_TITLE_EXCEPTION => ArgumentException::NOT_FOUND_TITLE,
-                     ArgumentException::KEY_TYPE_EXCEPTION => ArgumentException::ERROR_TYPE_EXCEPTION
-                 ]
+                404
             );
         } 
     }

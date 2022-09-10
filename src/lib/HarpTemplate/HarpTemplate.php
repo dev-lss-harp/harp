@@ -8,10 +8,6 @@ use Harp\bin\ArgumentException;
 
 class HarpTemplate
 {
-
-        const __SERVER_VARIABLES = '__SERVER_VARIABELS';
-        const __APP_PROPERTIES = '__APP_PROPERTIES';
-
         private $properties;
         private $permittedExtensions = [
                 'html',
@@ -21,6 +17,7 @@ class HarpTemplate
         private $Replacer;
         private $Repeater;
         private $listTemplates = [];
+        private $paths = [];
         
         public function __construct(View $ViewObject)
         {
@@ -52,36 +49,36 @@ class HarpTemplate
         {
 
             $directory = !is_null($directoryORFullPath) && !is_dir($directoryORFullPath) ?  DIRECTORY_SEPARATOR.$directoryORFullPath : '';
-            $fullPath = !is_null($directoryORFullPath) && is_dir($directoryORFullPath) ? $directoryORFullPath : '';
+            $fullPath = !is_null($directoryORFullPath) && is_dir($directoryORFullPath) ? $directoryORFullPath : null;
 
-            $paths = [
-                PATH_VIEW_APP.$directory,
-                PATH_PUBLIC_LAYOUTS_APP.$directory,
-                PATH_PUBLIC_LAYOUTS.$directory,
-                PATH_PUBLIC_TEMPLATES_APP.$directory,
-                PATH_PUBLIC_TEMPLATES.$directory,
-                PATH_PUBLIC.$directory
+            $this->paths = [
+                PATH_PUBLIC_LAYOUTS_MODULE,
+                PATH_PUBLIC_TEMPLATES_MODULE,
+                PATH_PUBLIC_LAYOUTS_GROUP,
+                PATH_PUBLIC_TEMPLATES_GROUP,
+                PATH_PUBLIC_LAYOUTS_APP,
+                PATH_PUBLIC_LAYOUTS,
+                PATH_PUBLIC_TEMPLATES_APP,
+                PATH_PUBLIC_TEMPLATES,
+                PATH_PUBLIC,
             ];
 
-            $path = '';
+            $path = $fullPath ?? null;
 
             if((is_null($directoryORFullPath) || !empty($directory)) && empty($fullPath))
             {
 
-                foreach($paths as $p)
+                foreach($this->paths as $p)
                 {
-                    if(!$this->verifyFileFound($p,$fileName))
+                    $pth = sprintf('%s%s',$p,$directory);
+                    if(!$this->verifyFileFound($pth,$fileName))
                     {
                         continue;
                     }
 
-                    $path = $p;
+                    $path = $pth;
                 }
 
-            }
-            else if(is_dir($fullPath))
-            {
-                $path =  $fullPath;
             }
 
             if(empty($path) || !is_dir($path))
@@ -175,6 +172,11 @@ class HarpTemplate
         public function getPermittedExtensions()
         {
             return $this->permittedExtensions;
+        }
+
+        public function getPaths()
+        {
+            return $this->paths;
         }
         
         public function setProperty($key,&$value)

@@ -8,57 +8,60 @@ namespace Harp\bin;
  */
 use Harp\bin\HarpApplicationInterface;
 use Harp\bin\HarpServer;
-use Harp\lib\HarpTemplate\HarpTemplate;
+use Harp\enum\RouteEnum;
+use Harp\enum\ViewEnum;
 
 abstract class HarpView
 {
-    const __SERVER_VARIABLES = '__SERVER_VARIABELS';
-    const __APP_PROPERTIES = '__APP_PROPERTIES';
-
     private $properties;
     private $Application;
     private $ServerConfig;
+    private $viewPaths = [];
     
     protected function __construct($viewName)
     {
         if(empty($viewName))
         {
-            throw new \Exception('View is empty or null!');
+            throw new \Exception('View is empty or null!',500);
         }
-        $this->properties = new \stdClass();
-        $this->properties->viewName = $viewName;
         
+        $this->properties = new \stdClass();
+        $this->viewPaths[ViewEnum::Action->value] = $viewName;
     }
     
     private function renderView(HarpApplicationInterface $Application, HarpServer $ServerConfig)
     {
         $this->Application = $Application;
         $this->ServerConfig = $ServerConfig;
-        $this->setProperty(self::__SERVER_VARIABLES,$this->ServerConfig->getAll());
-        $this->setProperty(self::__APP_PROPERTIES,$Application->getProperties());
-    
-        $routeCurrent = $this->Application->getProperty('routeCurrent');
+        $routeCurrent = $this->Application->getProperty(RouteEnum::class);
 
-        $viewGroup = $routeCurrent['group'];
+        $this->viewPaths[ViewEnum::Group->value] = mb_strtolower($routeCurrent[RouteEnum::Group->value]);
 
-        if(!is_string($viewGroup) || empty($viewGroup))
+        if(!array_key_exists(RouteEnum::Group->value,$routeCurrent) || empty($routeCurrent[RouteEnum::Group->value]))
         {
-            throw new \Exception('Group View is not defined!');
+            throw new \Exception('Group View is not defined!',500);
         }
 
-        $nameSpace = $this->Application->getAppNamespace();
+        $viewGroup = sprintf
+        (
+            '%s%s%s%s%s%s%s%s',
+            $this->Application->getAppNamespace(),
+            '\\modules',
+            '\\',
+            $routeCurrent[RouteEnum::Module->value], 
+            '\\view',
+            '\\',
+            $routeCurrent[RouteEnum::Group->value],
+            'View',
 
-        $this->setProperty('viewGroup',mb_strtolower($viewGroup));
+        );
+        
+        $this->setProperty(ViewEnum::ServerVar->value,$this->ServerConfig->getAll());
+        $this->setProperty(ViewEnum::Resources->value,$this->Application->getProperty(ViewEnum::Resources->value));
+        $this->setProperty(ViewEnum::RouteCurrent->value,$this->viewPaths);
 
-        $viewGroup = $nameSpace
-                    .'\\modules'
-                    .'\\'.$routeCurrent['module']
-                    .'\\view'
-                    .'\\'.$viewGroup.'View';
-                 
         $ViewObj = new $viewGroup($this);
-
-        $viewName = $this->properties->viewName;
+        $viewName = $this->viewPaths[ViewEnum::Action->value];
 
         if(is_callable([$ViewObj,$viewName]))
         {

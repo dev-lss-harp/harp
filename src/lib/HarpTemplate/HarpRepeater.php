@@ -10,12 +10,6 @@ namespace Harp\lib\HarpTemplate;
 
 class HarpRepeater
 {
-    private const  WORD_KEY_PROP = '@prop';
-    private const  WORD_KEY_CONST = '@const';
-    private const  WORD_KEY_PATH = '@path';
-    private const  WORD_KEY_VIEW = '@view';
-    private const  WORD_KEY_ACTION = '@action';
-    
     private $Template;
     
     public function __construct(HarpTemplate $Template)
