@@ -174,16 +174,15 @@ class HarpRoute
 
     private function baseConstants()
     {
-        $basePath = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
 
-        $pathProject =  str_ireplace(['\\'],[DIRECTORY_SEPARATOR],realpath($basePath));
+        $pathProject =  str_ireplace(['\\'],[DIRECTORY_SEPARATOR],realpath($this->basePath));
 
         $this->ServerRequest
                 ->getServerConfig()->set(PathEnum::PATH_PROJECT->name,$pathProject);
         $this->ServerRequest
                 ->getServerConfig()->set(PathEnum::PATH_FRAMEWORK->name,PATH_PROJECT.DIRECTORY_SEPARATOR.'Harp');
         $this->ServerRequest
-                ->getServerConfig()->set(PathEnum::PATH_APP->name,$basePath.DIRECTORY_SEPARATOR.'app');
+                ->getServerConfig()->set(PathEnum::PATH_APP->name,PATH_PROJECT.DIRECTORY_SEPARATOR.'app');
         $this->ServerRequest
                 ->getServerConfig()->set(ProjectEnum::PROJECT_NAME->value,(DOCUMENT_ROOT != PATH_PROJECT) ? trim(basename($pathProject)) : '');
 

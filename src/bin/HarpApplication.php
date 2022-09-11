@@ -14,7 +14,6 @@ abstract class HarpApplication implements HarpApplicationInterface
 
     private $appName;
     private $Application;
-    private $pathRoot;
     private $pathCertificate;
     private $pathEncryptionKeys;
     protected $registeredApps = [];
@@ -22,8 +21,6 @@ abstract class HarpApplication implements HarpApplicationInterface
 
     protected function __construct(HarpApplicationInterface &$Application,Array $registeredApps,$pathCertificate = null,$pathEncryptionKey = null)
     {
-        $this->pathRoot = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
-        
         $this->dotenv = new Dotenv();
 
         $this->Application = $Application;
@@ -34,14 +31,14 @@ abstract class HarpApplication implements HarpApplicationInterface
         
 
         $defaultPathCerts = 
-                        $this->pathRoot.DIRECTORY_SEPARATOR.
+                    PATH_PROJECT.DIRECTORY_SEPARATOR.
                         AppEnum::APP_DIR->value.DIRECTORY_SEPARATOR.
                         mb_strtolower($this->appName).DIRECTORY_SEPARATOR.
                         AppEnum::StorageDir->value.DIRECTORY_SEPARATOR.
                         AppEnum::StorageCertsDir->value;
 
         $defaultPathKeys = 
-                        $this->pathRoot.DIRECTORY_SEPARATOR.
+                    PATH_PROJECT.DIRECTORY_SEPARATOR.
                         AppEnum::APP_DIR->value.DIRECTORY_SEPARATOR.
                         mb_strtolower($this->appName).DIRECTORY_SEPARATOR.
                         AppEnum::StorageDir->value.DIRECTORY_SEPARATOR.
