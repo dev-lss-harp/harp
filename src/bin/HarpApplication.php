@@ -14,6 +14,7 @@ abstract class HarpApplication implements HarpApplicationInterface
 
     private $appName;
     private $Application;
+    private $pathRoot;
     private $pathCertificate;
     private $pathEncryptionKeys;
     protected $registeredApps = [];
@@ -21,15 +22,9 @@ abstract class HarpApplication implements HarpApplicationInterface
 
     protected function __construct(HarpApplicationInterface &$Application,Array $registeredApps,$pathCertificate = null,$pathEncryptionKey = null)
     {
+        $this->pathRoot = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
+        
         $this->dotenv = new Dotenv();
-        $dtEnvPath = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
-        $this->dotenv->loadEnv($dtEnvPath.DIRECTORY_SEPARATOR.AppEnum::ENV_DEVELOP->value);
-        $this->dotenv->loadEnv($dtEnvPath.DIRECTORY_SEPARATOR.AppEnum::ENV->value);
- 
-        if(file_exists($dtEnvPath.DIRECTORY_SEPARATOR.AppEnum::ENV_MAINTAINER->value))
-        {
-            $this->dotenv->loadEnv($dtEnvPath.DIRECTORY_SEPARATOR.AppEnum::ENV_MAINTAINER->value);
-        }
 
         $this->Application = $Application;
         
@@ -39,14 +34,14 @@ abstract class HarpApplication implements HarpApplicationInterface
         
 
         $defaultPathCerts = 
-                        $dtEnvPath.DIRECTORY_SEPARATOR.
+                        $this->pathRoot.DIRECTORY_SEPARATOR.
                         AppEnum::APP_DIR->value.DIRECTORY_SEPARATOR.
                         mb_strtolower($this->appName).DIRECTORY_SEPARATOR.
                         AppEnum::StorageDir->value.DIRECTORY_SEPARATOR.
                         AppEnum::StorageCertsDir->value;
 
         $defaultPathKeys = 
-                        $dtEnvPath.DIRECTORY_SEPARATOR.
+                        $this->pathRoot.DIRECTORY_SEPARATOR.
                         AppEnum::APP_DIR->value.DIRECTORY_SEPARATOR.
                         mb_strtolower($this->appName).DIRECTORY_SEPARATOR.
                         AppEnum::StorageDir->value.DIRECTORY_SEPARATOR.

@@ -2,8 +2,10 @@
 namespace App\{{__namespace}};
 
 use Harp\bin\HarpApplication;
-use Harp\lib\HarpDatabase\HarpConnection;
-use Harp\lib\HarpDatabase\ContainnerConn;
+use Harp\lib\HarpEnv\Env;
+use ricwein\FileSystem\Directory;
+use ricwein\FileSystem\Storage;
+use Harp\enum\AppEnum;
 use Exception;
 
 class {{__name}} extends HarpApplication
@@ -28,8 +30,12 @@ class {{__name}} extends HarpApplication
     */
    public function config()
    {
-      $this->setProperty('api_config',[
-         'base_url' => '172.18.0.1',
-      ]);
+      //env files
+      $this->dotenv->loadEnv($this->pathRoot.DIRECTORY_SEPARATOR.AppEnum::ENV_DEVELOP->value);
+      $this->setProperty(AppEnum::StorageDir->value,new Directory(new Storage\Disk(PATH_STORAGE)));
+
+      //storage
+      $this->setProperty(AppEnum::StorageDir->value,new Directory(new Storage\Disk(PATH_STORAGE)));
+
    }
 }
