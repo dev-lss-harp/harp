@@ -354,7 +354,7 @@ class HarpProcess
 
    private function verifyHttpMethod($plainExecution)
    {
-        $route = $this->routeCurrent['current'];
+        $route = $this->routeCurrent[RouteEnum::Current->value];
         $requestMethod = !empty($route['requestMethod']) ? $route['requestMethod'] : 'GET';
         $method = $this->Application->getProperty(HarpHttpMessage::class)->getServerRequest()->getMethod();
 

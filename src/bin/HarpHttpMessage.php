@@ -256,12 +256,13 @@ class HarpHttpMessage
     private function parsedQuery($Application)
     {        
         $routeCurrent = $Application->getProperty(RouteEnum::class);
-        $alias = $routeCurrent['alias'];
-        $route = $routeCurrent['current'];
+
+        $alias = $routeCurrent[RouteEnum::Alias->value];
+        $route = $routeCurrent[RouteEnum::Current->value];
         $routeArgs = $this->parseArgsFromRoute($route);
 
         $urlParams = $this->filterParametersUrl($alias);
-
+        
         $this->uriQuery = $this->getParametersByRouteArgs($urlParams,$routeArgs);
     }
     
