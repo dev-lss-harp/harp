@@ -29,7 +29,7 @@ class Del
 
         $path = sprintf
                 (
-                    Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s%s%s',
+                    Path::getProjectPath().'%s%s%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -72,7 +72,7 @@ class Del
 
         $path = sprintf
                 (
-                    Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s%s%s',
+                    Path::getProjectPath().'%s%s%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -114,7 +114,7 @@ class Del
 
         $path = sprintf
                 (
-                    Path::getAppPath().'%s%s%s%s%s%s%s%s%s%s%s%s',
+                    Path::getProjectPath().'%s%s%s%s%s%s%s%s%s%s%s%s',
                     DIRECTORY_SEPARATOR,
                     'app',
                     DIRECTORY_SEPARATOR,
@@ -145,7 +145,7 @@ class Del
 
         $publicFolder = sprintf
         (
-            Path::getAppPath().'%s%s%s%s%s%s%s%s',
+            Path::getProjectPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'public',
             DIRECTORY_SEPARATOR,
@@ -187,7 +187,7 @@ class Del
 
         $appName = trim(ucfirst($args[2]));
 
-        $fileStart = file_get_contents(Path::getAppPath().DIRECTORY_SEPARATOR.'index.php');
+        $fileStart = file_get_contents(Path::getProjectPath().DIRECTORY_SEPARATOR.'index.php');
 
         $startBase = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'StartBase.playh');
 
@@ -208,7 +208,7 @@ class Del
 
         self::createIndexCode($startBase,$strApps);
 
-        $pRoutes = sprintf(Path::getAppPath().'%s%s',DIRECTORY_SEPARATOR,'app');
+        $pRoutes = sprintf(Path::getProjectPath().'%s%s',DIRECTORY_SEPARATOR,'app');
 
         $routes = json_decode(file_get_contents($pRoutes.DIRECTORY_SEPARATOR.'routes.json'),true);
 
@@ -218,7 +218,7 @@ class Del
 
         $appPath =  sprintf
         (
-            Path::getAppPath().'%s%s%s%s',
+            Path::getProjectPath().'%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -227,7 +227,7 @@ class Del
 
         $publicFolder = sprintf
         (
-            Path::getAppPath().'%s%s%s%s%s%s',
+            Path::getProjectPath().'%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'public',
             DIRECTORY_SEPARATOR,
@@ -240,7 +240,7 @@ class Del
         self::deleteAll($publicFolder);
 
         file_put_contents($pRoutes.DIRECTORY_SEPARATOR.'routes.json',json_encode($routes,JSON_PRETTY_PRINT));
-        file_put_contents(Path::getAppPath().DIRECTORY_SEPARATOR.'index.php',$startBase);
+        file_put_contents(Path::getProjectPath().DIRECTORY_SEPARATOR.'index.php',$startBase);
      
         Show::showMessage(sprintf(Show::getMessage(501),'app',$appName));
     }
@@ -270,7 +270,7 @@ class Del
 
         $appName = trim(ucfirst($args[2]));
 
-        $fileStart = file_get_contents(Path::getAppPath().DIRECTORY_SEPARATOR.'index.php');
+        $fileStart = file_get_contents(Path::getProjectPath().DIRECTORY_SEPARATOR.'index.php');
 
         $startBase = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'StartBase.playh');
 
@@ -291,7 +291,7 @@ class Del
 
         self::createIndexCode($startBase,$strApps);
 
-        $pRoutes = sprintf(Path::getAppPath().'%s%s',DIRECTORY_SEPARATOR,'app');
+        $pRoutes = sprintf(Path::getProjectPath().'%s%s',DIRECTORY_SEPARATOR,'app');
 
         $routes = json_decode(file_get_contents($pRoutes.DIRECTORY_SEPARATOR.'routes.json'),true);
 
@@ -301,7 +301,7 @@ class Del
 
         $appPath =  sprintf
         (
-            Path::getAppPath().'%s%s%s%s',
+            Path::getProjectPath().'%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -311,7 +311,7 @@ class Del
         self::deleteAll($appPath);
 
         file_put_contents($pRoutes.DIRECTORY_SEPARATOR.'routes.json',json_encode($routes,JSON_PRETTY_PRINT));
-        file_put_contents(Path::getAppPath().DIRECTORY_SEPARATOR.'index.php',$startBase);
+        file_put_contents(Path::getProjectPath().DIRECTORY_SEPARATOR.'index.php',$startBase);
      
         Show::showMessage(sprintf(Show::getMessage(501),'api',$appName));
     }

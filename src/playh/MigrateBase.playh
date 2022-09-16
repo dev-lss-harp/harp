@@ -1,13 +1,18 @@
 <?php
-namespace Harp\app\{{app}}\storage\migrations;
+namespace Harp\playh;
+
+//start_use
+//end_use
+
+//start_require
+//end_require
 
 class Migrate
 {
     private $s = {{status}};
 
-    //@sInstances
-
-    //@eInstances
+    //start_declare
+    //end_declare
 
     public function __construct(){}
 
@@ -16,15 +21,7 @@ class Migrate
         return $this->s;
     }
 
-    public function createUP()
-    {
-        //@sCreate
-
-        //@eCreate
-
-        //@sCreateUP
-
-        //@eCreateUP
-    }
+    //start_methods
+    //end_methods
 
 }

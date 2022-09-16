@@ -4,11 +4,16 @@ class Path
 {
     public static function getAppPath()
     {
-        return dirname(dirname(dirname(dirname(dirname(__DIR__)))));
+        return dirname(dirname(dirname(dirname(__DIR__))));
     }
 
     public static function getRootPath()
     {
         return dirname(dirname(dirname(dirname(dirname(dirname(__DIR__))))));
+    }
+
+    public static function getProjectPath()
+    {
+        return dirname(dirname(dirname(dirname(dirname(__DIR__)))));
     }
 }

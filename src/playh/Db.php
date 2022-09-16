@@ -10,17 +10,17 @@ require_once(__DIR__.DIRECTORY_SEPARATOR.'Show.php');
 class Db
 {
     private static $DotEnv;
+    
     public static function loadEnv()
     {
         self::$DotEnv = new Dotenv();
-        self::$DotEnv->loadEnv(Path::getAppPath().'/.env','env_main');
-        self::$DotEnv->loadEnv(Path::getAppPath().'/.env-develop','env-develop');
-        if(file_exists(Path::getAppPath().'/.env-maintainer'))
+        self::$DotEnv->loadEnv(Path::getProjectPath().'/.env','env_main');
+        self::$DotEnv->loadEnv(Path::getProjectPath().'/.env-develop','env-develop');
+        if(file_exists(Path::getProjectPath().'/.env-maintainer'))
         {
-            self::$DotEnv->loadEnv(Path::getAppPath().'/.env-maintainer','env-maintainer');
+            self::$DotEnv->loadEnv(Path::getProjectPath().'/.env-maintainer','env-maintainer');
         }
     }
-
 
     public static function eloquentManager()
     {
@@ -77,7 +77,7 @@ class Db
 
         $path = sprintf
         (
-            Path::getAppPath().'%s%s%s%s%s%s%s%s',
+            Path::getProjectPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -92,24 +92,33 @@ class Db
         {
             Show::showMessage(sprintf(Show::getMessage(1000),sprintf('folder {migrations} not found in %s!',$path)));
         }
-        else if(!file_exists($path.DIRECTORY_SEPARATOR.'Migrate.php'))
-        {
-            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Migrate class not found in %s!',$path)));
-        }
-
+       
         self::loadEnv();
         self::eloquentManager();
         self::createMigraionTableBaseControl();
 
-        $class = sprintf('\\Harp\app\%s\storage\migrations\\%s',$app,'Migrate');
-
+        $class = sprintf('\\Harp\playh\%s','Migrate');
+   
         if(!\class_exists($class))
         {
-            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Migrate class not found in %s!',$path)));
+            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Migrate class not found!')));
         }
 
-        $migrate = new $class();
-        $migrate->createUP();
+        $migrate = new Migrate();
+
+        foreach (array_filter(glob($path.'/*'), 'is_file') as $file)
+        {
+            $migr = pathinfo($file, PATHINFO_FILENAME);
+            $mtd = sprintf('get%s',$migr);
+
+            if(\method_exists($migrate,$mtd))
+            {
+            
+                $ClsMtd = $migrate->{$mtd}();
+                $ClsMtd->up();
+            }
+        }
+
         Show::showMessage(sprintf(Show::getMessage(1001),sprintf('All migrations were performed successfully!',$path)));
     }
 
@@ -117,7 +126,7 @@ class Db
     {
         if(empty($args[2]) || empty($args[3]) || empty($args[4]))
         {
-            Show::showMessage(sprintf(Show::getMessage(1000),'Missed argument {--app} or {--name} or {--table}!'));
+            Show::showMessage(sprintf(Show::getMessage(1000),'Missed argument {--app} or {--name} or {--table|--create}!'));
         }
 
         $countArgs = count($args);
@@ -128,12 +137,13 @@ class Db
 
         $name = null;
         $table = null;
+        $create = null;
         $app = null;
 
         for($i = 2; $i < $countArgs;++$i)
         {
             $re1 = '`--name=(.*)?`si';
-            $re2 = '`--table=(.*)?`si';
+            $re2 = '`--(?:create|table)=(.*)?`si';
             $re3 = '`--app=(.*)?`si';
 
             if(empty($mName[1]) && preg_match($re1,$args[$i],$mName))
@@ -142,17 +152,25 @@ class Db
             }
             else if(empty($mTable[1]) && preg_match($re2,$args[$i],$mTable))
             {
-                $table = trim($mTable[1]);
-            }   
+                if(preg_match(sprintf('`%s`','create'),$args[$i]))
+                {
+                    $create = trim($mTable[1]);
+                }
+                else 
+                {
+                    $table = trim($mTable[1]);
+                }
+               
+            }  
             else if(empty($mApp[1]) && preg_match($re3,$args[$i],$mApp))
             {
                 $app = trim($mApp[1]);
-            }              
+            }             
         }
 
         $path = sprintf
         (
-            Path::getAppPath().'%s%s%s%s%s%s%s%s',
+            Path::getProjectPath().'%s%s%s%s%s%s%s%s',
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
@@ -168,9 +186,17 @@ class Db
             Show::showMessage(sprintf(Show::getMessage(1000),sprintf('folder {migrations} not found in %s!',$path)));
         }
 
-        $baseFile = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'MigrationCreateBase.playh');
-        $nameClass = preg_replace("/[^A-Za-z0-9]/",'#',$name);
-        $parts = explode('#',$nameClass);
+        if(!empty($create))
+        {
+            $baseFile = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'MigrationCreateBase.playh');
+        }
+        else
+        {
+            $baseFile = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'MigrationTableBase.playh');
+        }
+       
+        $nameClass = preg_replace("/[^A-Za-z0-9]/",'_',!empty($name) ? $name : (!empty($table) ? $table : (!empty($create) ? $create : '')));
+        $parts = explode('_',$nameClass);
         $definitiveNameClass = '';
         for($i = 0; $i < count($parts);++$i)
         {
@@ -178,7 +204,7 @@ class Db
             $definitiveNameClass.= ucfirst($parts[$i]);
         }
 
-        $nameTable = preg_replace("/[^A-Za-z0-9\\_]/",'#',$table);
+        $nameTable = preg_replace("/[^A-Za-z0-9\\_]/",'#',!empty($table) ? $table : $create);
         $parts = explode('#',$nameTable);
         $definitiveNameTable = '';
         for($i = 0; $i < count($parts);++$i)
@@ -187,147 +213,146 @@ class Db
             $definitiveNameTable .= $parts[$i];
         }
 
-        $baseFile = str_ireplace(['{{app}}','{{class_name}}','{{table_name}}'],[$app,$definitiveNameClass,$definitiveNameTable],$baseFile);
-        
+        $namespace = sprintf("Harp\app\%s\storage\migrations",$app);
+        $baseFile = str_ireplace(['{{namespace}}','{{class_name}}','{{table_name}}'],[$namespace,$definitiveNameClass,$definitiveNameTable],$baseFile);
+
         $nameFile = $definitiveNameClass.'.php';
 
-        $base_migrate = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'MigrateBase.playh');
+        //Fim criação da classe que define a tabela
 
-        if(!file_exists($path.DIRECTORY_SEPARATOR.'Migrate.php'))
+        //Início da classe que executa
+        if(!file_exists(__DIR__.DIRECTORY_SEPARATOR.'Migrate.php'))
         {
-            $base_migrate = str_ireplace(['{{app}}'],[$app],$base_migrate);
-            file_put_contents($path.DIRECTORY_SEPARATOR.'Migrate.php',$base_migrate);
+            $base_migrate = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'MigrateBase.playh');
+            //$base_migrate = str_ireplace(['{{app}}'],[$app],$base_migrate);
+            file_put_contents(__DIR__.DIRECTORY_SEPARATOR.'Migrate.php',$base_migrate);
         }
-        else
+
+        $migrate = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'Migrate.php');
+
+        if(preg_match(sprintf('`%s`',$definitiveNameClass),$migrate))
         {
-            $base_migrate = file_get_contents($path.DIRECTORY_SEPARATOR.'Migrate.php');
+            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Migration %s exists!',$definitiveNameClass)));
         }
-        
-        $re = '`\/\/\@sCreate\b(.*)\/\/\@eCreate\b`is';
-        if(!preg_match($re,$base_migrate,$mObjects))
+
+
+        //Criar nova instância da classe de migração
+        $re = '/\/\/start_declare\b(.+)\/\/end_declare\b/is';
+        if(!preg_match($re,$migrate,$start_declare))
         {
             Show::showMessage(sprintf(Show::getMessage(1000),'Error while parse objects migrate!'));
         }
 
-        $objs = '';
+        $new_migration = sprintf('%s%s%s%s%sprivate $%s = null;%s',PHP_EOL,chr(32),chr(32),chr(32),chr(32),$definitiveNameClass,PHP_EOL); 
+        $declaration = trim($start_declare[1]);
+        $declaration .= $new_migration; 
+      
+        $migrate = str_ireplace([$start_declare[0]],['//start_declare'.PHP_EOL.$declaration.'//end_declare'],$migrate);
 
-        if(!empty($mObjects[1]))
+        //incluir use
+        
+        $re = '/\/\/start_use\b(.+)\/\/end_use\b/is';
+        if(!preg_match($re,$migrate,$start_use))
         {
-            $objs = trim($mObjects[1]);
+            Show::showMessage(sprintf(Show::getMessage(1000),'Error while parse objects migrate!'));
         }
 
-        $p = array_values(explode(';',$objs));
+        $namespaces = trim($start_use[1]);
+        $namespaces .= sprintf('%s%s%s%s%suse%s%s\%s;%s',PHP_EOL,chr(32),chr(32),chr(32),chr(32),chr(32),$namespace,$definitiveNameClass,PHP_EOL);
+        
+        $migrate = str_ireplace([$start_use[0]],['//start_use'.PHP_EOL.$namespaces.'//end_use'],$migrate);
 
-        $chr32 = chr(32);
+        //incluir requires
 
-        $objsRegistered = [];
-        $nextBatch = 0;
-        $existsBatch = false;
+        $re = '/\/\/start_require\b(.+)\/\/end_require\b/is';
+        if(!preg_match($re,$migrate,$start_require))
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),'Error while parse objects migrate!'));
+        }
+
+        $requires = trim($start_require[1]);
+        $requires .= sprintf
+            (   
+                "%srequire_once('%s%s%s');%s",
+                PHP_EOL,
+                $path,
+                DIRECTORY_SEPARATOR,
+                $nameFile,
+                PHP_EOL
+            );
+
+        $migrate = str_ireplace([$start_require[0]],['//start_require'.PHP_EOL.$requires.'//end_require'],$migrate);
+    
+
+        //incluir métodos
+        $re = '/\/\/start_methods\b(.+)\/\/end_methods\b/is';
+        if(!preg_match($re,$migrate,$start_methods))
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),'Error while parse objects migrate!'));
+        }
+
+        $methods  = trim($start_methods[1]);
+        $methods .= sprintf
+        (
+            '%s%s%s%s%spublic function get%s(){%s%s%s%s%s%s%s%s $this->%s = new %s();%s%s%s%s%s%s%s return $this->%s;%s%s%s%s%s}%s%s',
+            PHP_EOL,
+            PHP_EOL,
+            chr(32),
+            chr(32),
+            chr(32),
+            $definitiveNameClass,
+            PHP_EOL,
+            PHP_EOL,
+            chr(32),
+            chr(32),
+            chr(32),
+            chr(32),
+            chr(32),
+            chr(32),
+            $definitiveNameClass,
+            $definitiveNameClass,
+            PHP_EOL,
+            
+            chr(32),
+            chr(32),
+            chr(32),
+            chr(32),
+            chr(32),
+            chr(32),
+
+            $definitiveNameClass,
+            PHP_EOL,
+            PHP_EOL,
+            chr(32),
+            chr(32),
+            chr(32),
+            PHP_EOL,
+            PHP_EOL
+        );
+
+        $migrate = str_ireplace([$start_methods[0],'{{status}}'],['//start_methods'.PHP_EOL.$methods.'//end_methods',1],$migrate);
+
         self::loadEnv();
         self::eloquentManager();
         self::createMigraionTableBaseControl();
-        for($i = 0; $i < count($p);++$i)
+
+        if(CapsuleManager::schema()->hasTable($nameTable))
         {
-            $p[$i] = trim($p[$i]);
-            if(empty($p[$i]))
-            {
-                unset($p[$i]);
-                continue;
-            }
-         
-            if(!preg_match('`\$this\-\>([A-Za-z0-9]*)[^\=\ ]*`is',$p[$i],$result) || empty($result[1]))
-            {
-                Show::showMessage(sprintf(Show::getMessage(1000),'Error while parse objects migrate!'));
-            }
-
-            $class = sprintf('\\Harp\app\%s\storage\migrations\\%s',$app,trim($result[1]));
-
-            if(!\class_exists($class))
-            {
-                unset($p[$i]);
-                continue;
-            }
-
-            $vBatch = constant($class.'::BATCH');
-            $vTable = constant($class.'::TABLE_NAME');
-
-            $nextBatch = $vBatch > $nextBatch ? $vBatch : $nextBatch;
-
-            if(CapsuleManager::schema()->hasTable($vTable))
-            {
-                $existsBatch = true;
-            }
-
-            $p[$i] = sprintf('%s%s',str_repeat($chr32,10),$p[$i]);
-            $objsRegistered[] = '$this->'.trim($result[1]);
-        }
-        //dump(++$nextBatch);exit;
-        $classExists = \class_exists(sprintf('\\Harp\app\%s\storage\migrations\\%s',$app,$definitiveNameClass));
-                
-        if($classExists)
-        {
-            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Migrate {%s} já existe!',$definitiveNameClass)));
+            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Table {%s} exists in database!',$nameTable)));
         }
 
-        if($existsBatch)
+        $max = CapsuleManager::table('migrations')->select([CapsuleManager::raw('MAX(batch) AS batch')])->get()->first();
+
+        $batch = 1;
+        if(!empty($max->batch))
         {
-            $nextBatch = CapsuleManager::table('migrations')->max('batch') + 1;
+            $batch += $max->batch;
         }
 
-        $baseFile = str_ireplace(['{{batch}}'],[$nextBatch],$baseFile);
-        $currentObj = sprintf('%s$this->%s = new %s();%s',str_repeat($chr32,10),$definitiveNameClass,$definitiveNameClass,PHP_EOL);
-        array_push($p,$currentObj);
-        $objsRegistered[] = sprintf('%s%s','$this->',$definitiveNameClass);
-        $p = array_values($p);
-
-        $objs = implode(';'.PHP_EOL,$p);
-
-        $strMethods = '';
-        $strInstances = '';
-
-        foreach($objsRegistered as $strVar)
-        {
-            $strMethods .= sprintf('%s%s%s%s%s%s',str_repeat($chr32,9),$strVar,'->','up()',';',PHP_EOL);
-            $strInstances .= sprintf('%s%s%s%s%s%s',str_repeat($chr32,4),'public',$chr32,str_ireplace(['this->'],[''],$strVar),';',PHP_EOL);
-        }
-
-        $re = '`\/\/\@sCreateUP(.*)\/\/\@eCreateUP`is';
-    
-        $mMethods = [];
-        if(!preg_match($re,$base_migrate,$mMethods))
-        {
-            Show::showMessage(sprintf(Show::getMessage(1000),'Error while parse methods migrate!'));
-        }
-
-
-        $re = '`\/\/\@sInstances(.*)\/\/\@eInstances`is';
-    
-        $mInstances = [];
-        if(!preg_match($re,$base_migrate,$mInstances))
-        {
-            Show::showMessage(sprintf(Show::getMessage(1000),'Error while parse instances migrate!'));
-        }
-
-        $base_migrate = str_ireplace
-        (
-                [
-                    $mObjects[0],
-                    '{{status}}',
-                    $mMethods[0],
-                    $mInstances[0]
-                ],
-                [
-                    sprintf('%s//@sCreate%s%s%s//@eCreate',str_repeat($chr32,1),PHP_EOL,$objs,str_repeat($chr32,9)),
-                    (count($p) > 0 ? 'true' : 'false'),
-                    sprintf('%s//@sCreateUP%s%s%s//@eCreateUP',str_repeat($chr32,1),PHP_EOL,$strMethods,str_repeat($chr32,9)),
-                    sprintf('%s//@sInstances%s%s%s//@eInstances',str_repeat($chr32,1),PHP_EOL,$strInstances,str_repeat($chr32,7))
-                ],
-                $base_migrate
-            );
-
-       // $base_migrate = str_ireplace([$mMethods[0],'{{count}}'],[sprintf('%s//@sMethod%s%s//@eMethod',],$base_migrate);
-
-        if(file_put_contents($path.DIRECTORY_SEPARATOR.$nameFile,$baseFile) && file_put_contents($path.DIRECTORY_SEPARATOR.'Migrate.php',$base_migrate))
+        //consultar o batch na base
+        $baseFile = str_ireplace(['{{batch}}'],[$batch],$baseFile);
+        
+        if(file_put_contents($path.DIRECTORY_SEPARATOR.$nameFile,$baseFile) && file_put_contents(__DIR__.DIRECTORY_SEPARATOR.'Migrate.php',$migrate))
         {
             Show::showMessage(sprintf(Show::getMessage(200),'migrate',$nameFile));
         }
