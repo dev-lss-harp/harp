@@ -46,12 +46,15 @@ class Validator
         $status = preg_match("/\b\d{1,3}(?:,?\d{3})*(?:\.\d{2})?\b/",$value) ? true : false; 
         
         return $status;
-    }     
+    }    
+    
+    public static function isTypeBool($value)
+    {
+        return gettype($value) == 'boolean';
+    }  
       
     public static function isBoolean($value,$requiredValue)
     {
-        $type = gettype($value);
-        
         $s = is_bool($value) && $value === $requiredValue;
         
         return $s;
@@ -59,7 +62,7 @@ class Validator
     
     public static function isOnlyLetters($value)
     {
-        $v = SanitizeValue::replaceAccentsString($value);
+        $v = Sanitizer::replaceAccentsString($value);
 
         $status = ctype_alpha(str_replace(chr(32),'',$v));
 
@@ -72,6 +75,16 @@ class Validator
 
         return $status;
     } 
+
+    public static function isSignedInteger($value)
+    {
+        return self::isIntegerNumber($value);
+    }
+
+    public static function isUnsignedInteger($value)
+    {
+        return self::isNaturalNumber($value);
+    }
     
     public static function isNaturalNumber($value)
     {
@@ -153,6 +166,11 @@ class Validator
         $s = $d && $d->format($format) == $date;
         
         return $s;
+    }
+
+    public static function biggerThan($val1,$val2)
+    {
+        return $val1 > $val2;
     }
     
     public static function isCnpj($cnpj)

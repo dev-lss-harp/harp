@@ -19,9 +19,4 @@ class View extends HarpView
         
         return $this;
     }
-    
-    public static function defaultAction($value)
-    {
-        exit(print(json_encode([$value])));
-    }
 }

@@ -1,0 +1,13 @@
+<?php
+
+namespace App\{{app}}\modules\{{module}}\mapper;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class {{nameModel}} extends Model
+{
+    use HasFactory;
+
+    protected $table =  {{tableName}};
+}

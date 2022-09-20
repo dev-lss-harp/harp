@@ -11,6 +11,9 @@ class Migrate
 {
     private $s = {{status}};
 
+    //start_order
+    //end_order
+
     //start_declare
     //end_declare
 

@@ -76,6 +76,7 @@ class HarpResponse extends Response
         508 => 'Loop Detected',
         510 => 'Not Extended',
         511 => 'Network Authentication Required',
+        599 => 'Internal Exceptions'
     ];
 
     //private const RESPONSE = 'RESPONSE';
@@ -98,6 +99,7 @@ class HarpResponse extends Response
     public const HTTP_REDIRECT = 2;
     public const HTTP_CLIENT_ERROR = 3;
     public const HTTP_SERVER_ERROR = 4;
+    public const HTTP_INVALID = 5;
 
 
     private $collectionBody = [];
@@ -133,8 +135,6 @@ class HarpResponse extends Response
 
     private function checkStatusCode(int $code,int $responseType) : bool
     {
-        $code = $code == 0 ? $this->getStatusCode() : $code;
-
         switch($responseType)
         {
             case self::HTTP_SUCCESS:
@@ -151,6 +151,9 @@ class HarpResponse extends Response
             break;
             case self::HTTP_SERVER_ERROR:
                 return $code >= 500 && $code <= 599;
+            break;
+            case self::HTTP_INVALID:
+                return $code < 100 || $code > 599;
             break;
             default:
                 return false;
@@ -214,6 +217,11 @@ class HarpResponse extends Response
         return $this->checkStatusCode($code,self::HTTP_SERVER_ERROR);
     }
 
+    public function isInvalidCode(int $code = 0) : bool
+    {
+        return $this->checkStatusCode($code,self::HTTP_INVALID);
+    }   
+
     public function OK(Array $bodyCollection,$code = 200,$response = self::JSON)
     {
         $this->headerSuccess($code);
@@ -226,6 +234,49 @@ class HarpResponse extends Response
 
         return $this;
     }
+
+    private function headerByCode($code)
+    {
+        if($this->isSuccessCode($code))
+        { 
+            $this->headerSuccess($code);
+        }
+        else if($this->isRedirectCode($code))
+        {
+            $this->headerRedirection($code);
+        }
+        else if($this->isClientErrorCode($code))
+        {
+            $this->headerClientError($code);
+        }
+        else if($this->isServerErrorCode($code))
+        {
+            $this->headerServerError($code);
+        }
+        else if($this->isInfoCode($code))
+        {
+            $this->headerInfo($code);
+        }
+        else if($this->isInvalidCode($code))
+        { 
+            $this->headerServerError(599);
+        }
+    }
+
+    public function ByStatus(Array $bodyCollection,$code = 200,$response = self::JSON)
+    {
+        
+        $this->headerByCode($code);
+    
+        foreach($bodyCollection as $key => $body)
+        {
+            $this->putBody($key,$body);
+        }
+    
+        $this->createResponse($response);
+
+        return $this;
+    }   
 
     public function ServerError(Array $bodyCollection,$code = 500,$response = self::JSON)
     {
@@ -420,7 +471,7 @@ class HarpResponse extends Response
         {
             $body = $this->createResponseJson();
         }
-
+     
         parent::__construct(
             $this->code,
             $this->collectionHeader,
@@ -592,29 +643,23 @@ class HarpResponse extends Response
         $this->sendResponse($headers,$contents);
     }    
 
-    public function throwResponseException(Throwable $th)
+    public function debugException(bool $debug = true)
+    {
+        $this->debugException = $debug;
+
+        return $this;
+    }
+    
+    public function throwResponseException(Throwable $th,bool $debugException = false)
     {        
+        $code = $th->getCode() >= 400 && $th->getCode() <= 599 ? $th->getCode() : 599;
 
-        $code = $th->getCode() >= 400 && $th->getCode() <= 599 ? $th->getCode() : 500;
-
-        if($code >= 400 && $code <= 499)
-        {
-            $this->ClientError([
-                'code' => $th->getCode(),
-                'message' => $th->getMessage(),
-                'file' => $this->debugException ? $th->getFile() : $this->msgDebugDisabled,
-                'lineNumber' => $this->debugException ? $th->getLine() : $this->msgDebugDisabled
-            ],$code);
-        }
-        else
-        {
-            $this->ServerError([
-                'code' => $th->getCode(),
-                'message' => $th->getMessage(),
-                'file' => $this->debugException ? $th->getFile() : $this->msgDebugDisabled,
-                'lineNumber' => $this->debugException ? $th->getLine() : $this->msgDebugDisabled
-            ],$code);
-        }
+        $this->ByStatus([
+            'response' => $th->getMessage(),
+            'code' => $th->getCode(),
+            'file' => ($debugException || $this->debugException) ? $th->getFile() : $this->msgDebugDisabled,
+            'lineNumber' => ($debugException || $this->debugException) ? $th->getLine() : $this->msgDebugDisabled
+        ],$code);
 
         return $this;
     }

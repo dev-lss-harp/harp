@@ -73,7 +73,7 @@ class HarpHttpMessage
     
         $contentType = $this->HarpServerRequest->getServerRequest()->getHeader('Content-Type');
         $contentType = isset($contentType[0]) ? $contentType[0] : null;
-    
+   
         if(empty($this->body))
         {
             if(!empty($contentType) && preg_match('`\bform-data\b`',$contentType))
@@ -85,16 +85,20 @@ class HarpHttpMessage
                 $this->parseFromStream($contentType);
             }
         }
-
-        $this->sanitizeDefault();
+      
+        $this->body = $this->sanitizeDefault($this->body);
     }
 
-    private function sanitizeDefault()
+    private function sanitizeDefault(&$body)
     {
-        foreach($this->body as $k => $v)
+        foreach($body as $k => $v)
         {
-            $this->body[$k] = filter_var($v,\FILTER_SANITIZE_ADD_SLASHES);
+            $body[$k] = is_array($v) ? 
+                        $this->sanitizeDefault($v) : 
+                        (is_string($v) ? filter_var($v,\FILTER_SANITIZE_ADD_SLASHES) : $v);
         }
+
+        return $body;
     }
 
     private function parseFromStream($contentType)

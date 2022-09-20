@@ -48,6 +48,51 @@ class Db
         }
     }
 
+    public static function entity($args,$noExit = false)
+    {
+        if(empty($args[2]))
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{entityName}!'));
+        }
+
+        $arg = explode('/',$args[2]);
+
+        $tableName = trim($arg[2]);
+
+        if(isset($args[3]) && preg_match('`--table=(.*)`',$args[3],$matches))
+        {
+            if(!empty($matches[1]))
+            {
+                $tableName = trim($matches[1]);
+            }
+        }
+
+        if(count($arg) != 3)
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{module}/{entityName}!'));
+        }
+
+        $path = Path::getProjectPath().DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.$arg[0].DIRECTORY_SEPARATOR.'modules'.DIRECTORY_SEPARATOR.$arg[1];
+
+        if(!is_dir($path))
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Not found {app}/{module} %s/%s!',$arg[0],$arg[1])));
+        }
+        
+        if(!is_dir($path.DIRECTORY_SEPARATOR.'mapper'))
+        {
+            mkdir($path.DIRECTORY_SEPARATOR.'mapper',0755,true);
+        }
+
+        $model = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'ModelORMBase.playh');
+
+        $model = str_ireplace(['{{app}}','{{module}}','{{nameModel}}','{{tableName}}'],[$arg[0],$arg[1],$arg[2],sprintf('%s%s%s',"'",$tableName,"'")],$model);
+
+        file_put_contents($path.DIRECTORY_SEPARATOR.'mapper'.DIRECTORY_SEPARATOR.$arg[2].'.php',$model);
+
+        Show::showMessage(sprintf(Show::getMessage(200),'Mapper Entity ',$arg[2]),$noExit);
+    }
+
     public static function migrate($args,$noExit = false)
     {
         if(empty($args[1]))
@@ -105,10 +150,10 @@ class Db
         }
 
         $migrate = new Migrate();
+        asort($migrate->orders);
 
-        foreach (array_filter(glob($path.'/*'), 'is_file') as $file)
+        foreach($migrate->orders as $migr => $ord)
         {
-            $migr = pathinfo($file, PATHINFO_FILENAME);
             $mtd = sprintf('get%s',$migr);
 
             if(\method_exists($migrate,$mtd))
@@ -117,8 +162,9 @@ class Db
                 $ClsMtd = $migrate->{$mtd}();
                 $ClsMtd->up();
             }
-        }
 
+        }
+        
         Show::showMessage(sprintf(Show::getMessage(1001),sprintf('All migrations were performed successfully!',$path)));
     }
 
@@ -129,22 +175,26 @@ class Db
             Show::showMessage(sprintf(Show::getMessage(1000),'Missed argument {--app} or {--name} or {--table|--create}!'));
         }
 
+
         $countArgs = count($args);
 
         $mName = [];
         $mTable = [];
         $mApp = [];
+        $mOrder = [];
 
         $name = null;
         $table = null;
         $create = null;
         $app = null;
+        $order = null;
 
         for($i = 2; $i < $countArgs;++$i)
         {
             $re1 = '`--name=(.*)?`si';
             $re2 = '`--(?:create|table)=(.*)?`si';
             $re3 = '`--app=(.*)?`si';
+            $re4 = '`--order=(.*)`si';
 
             if(empty($mName[1]) && preg_match($re1,$args[$i],$mName))
             {
@@ -165,7 +215,11 @@ class Db
             else if(empty($mApp[1]) && preg_match($re3,$args[$i],$mApp))
             {
                 $app = trim($mApp[1]);
-            }             
+            }   
+            else if(empty($mOrder[1]) && preg_match($re4,$args[$i],$mOrder))
+            {
+                $order = intval(trim($mOrder[1]));
+            }              
         }
 
         $path = sprintf
@@ -240,7 +294,7 @@ class Db
         $re = '/\/\/start_declare\b(.+)\/\/end_declare\b/is';
         if(!preg_match($re,$migrate,$start_declare))
         {
-            Show::showMessage(sprintf(Show::getMessage(1000),'Error while parse objects migrate!'));
+            Show::showMessage(sprintf(Show::getMessage(1000),'Markup {start_declare} and {end_declare} not found in file base!'));
         }
 
         $new_migration = sprintf('%s%s%s%s%sprivate $%s = null;%s',PHP_EOL,chr(32),chr(32),chr(32),chr(32),$definitiveNameClass,PHP_EOL); 
@@ -254,7 +308,7 @@ class Db
         $re = '/\/\/start_use\b(.+)\/\/end_use\b/is';
         if(!preg_match($re,$migrate,$start_use))
         {
-            Show::showMessage(sprintf(Show::getMessage(1000),'Error while parse objects migrate!'));
+            Show::showMessage(sprintf(Show::getMessage(1000),'Markup {start_use} and {end_use} not found in file base!'));
         }
 
         $namespaces = trim($start_use[1]);
@@ -267,7 +321,7 @@ class Db
         $re = '/\/\/start_require\b(.+)\/\/end_require\b/is';
         if(!preg_match($re,$migrate,$start_require))
         {
-            Show::showMessage(sprintf(Show::getMessage(1000),'Error while parse objects migrate!'));
+            Show::showMessage(sprintf(Show::getMessage(1000),'Markup {start_require} and {end_require} not found in file base!'));
         }
 
         $requires = trim($start_require[1]);
@@ -288,7 +342,7 @@ class Db
         $re = '/\/\/start_methods\b(.+)\/\/end_methods\b/is';
         if(!preg_match($re,$migrate,$start_methods))
         {
-            Show::showMessage(sprintf(Show::getMessage(1000),'Error while parse objects migrate!'));
+            Show::showMessage(sprintf(Show::getMessage(1000),'Markup {start_methods} and {end_methods} not found in file base!'));
         }
 
         $methods  = trim($start_methods[1]);
@@ -331,6 +385,59 @@ class Db
         );
 
         $migrate = str_ireplace([$start_methods[0],'{{status}}'],['//start_methods'.PHP_EOL.$methods.'//end_methods',1],$migrate);
+
+        //incluir orders
+        $re = '/\/\/start_order\b(.+)\/\/end_order\b/is';
+        if(!preg_match($re,$migrate,$start_orders))
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),'Markup {start_order} and {end_order} not found in file base!'));
+        }
+
+        $orders =  trim($start_orders[1]);
+
+        $re = '/\$orders.+\[(.*?)\]/si';
+        preg_match($re,$orders,$orderArray);
+
+
+        $ord = [];
+        if(!empty($orderArray))
+        {
+            
+            $itens = explode(',',$orderArray[1]);
+            
+
+            foreach($itens as $item)
+            {
+
+                if(preg_match('`=>.*([0-9])`',$item,$valOrder))
+                {
+                    $mg = trim(preg_replace(['`=>.*`'],'',$item));
+                    $mg = str_ireplace(["'"],[""],$mg);
+                    $ord[$mg] = intval($valOrder[1]);
+                }
+            
+            }
+
+            $order = !empty($order) && is_int($order) ? $order : count($ord);
+            
+            if(in_array($order,$ord))
+            {
+                Show::showMessage(sprintf(Show::getMessage(1000),sprintf('order {%s} already exists in the list!',$order)));
+            }
+        }
+
+        $ord[$definitiveNameClass] = $order;
+
+        $attrOrder =  'public $orders = ['.PHP_EOL;
+        foreach($ord as $key => $v)
+        {
+            $attrOrder .= sprintf('%s%s%s%s%s%s%s%s%s',chr(32),chr(32),"'",$key,"'",'=>',$v,',',PHP_EOL);
+        }
+        $attrOrder .= '];'; 
+
+        $migrate = str_ireplace([$start_orders[0]],['//start_order'.PHP_EOL.$attrOrder.'//end_order',1],$migrate);
+ 
+        $methods  = trim($start_methods[1]);
 
         self::loadEnv();
         self::eloquentManager();

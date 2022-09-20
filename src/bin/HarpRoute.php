@@ -85,7 +85,7 @@ class HarpRoute
         return $this;
     }    
 
-    private function renderView($Response,$ServerRequest)
+    private function buildResponse($Response)
     {    
         if($Response instanceof HarpView)
         {
@@ -99,9 +99,16 @@ class HarpRoute
         {
             throw $Response;
         }
+        else if($Response instanceof HarpResponse)
+        {
+            if($Response->getStatusCode() >= 400 && $Response->getStatusCode() <= 599)
+            {
+                $Response->json();
+            }
+        }
         else
         {
-            \Harp\bin\View::DefaultAction($Response);
+            throw new Exception('Unable to construct the response, because the return is not a valid object for Harp responses!');
         }
     }    
 
@@ -126,8 +133,7 @@ class HarpRoute
     
             $Process = new HarpProcess($this->app);
             $Response = $Process->run();
-       
-            $this->renderView($Response,$this->ServerRequest);
+            $this->buildResponse($Response);
     }
 
     private function publicConstants()

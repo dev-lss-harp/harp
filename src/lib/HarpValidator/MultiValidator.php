@@ -17,8 +17,12 @@ class MultiValidator
         'valueIsNotNullOrEmpty' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
         'isCurrency' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
         'isBoolean' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
+        'isTypeBool' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
         'isOnlyLetters' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
         'isIntegerNumber' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
+        'isUnsignedInteger' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
+        'isSignedInteger' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
+        'biggerThan' => 'Parameter {%s} with value {%s} is smaller than with value {%s}!',
         'isNaturalNumber' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
         'isZipCode' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
         'maxlength' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
@@ -49,6 +53,7 @@ class MultiValidator
 
     private function validate($data,$property,$rule)
     {
+
         $err = false;
 
         if(!array_key_exists($property,$data))
@@ -67,10 +72,10 @@ class MultiValidator
 
         $value = $data[$property];
         $fnArgs[0] = $value;
-
+        
         foreach($fnArgs as $k => $v)
         {
-            $fnArgs[$k] = trim($v);
+            $fnArgs[$k] = is_string($v) ? trim($v) : $v;
         }
 
         $Reflection = new \ReflectionMethod($this->validator, $method);
@@ -162,6 +167,16 @@ class MultiValidator
     public function toString()
     {
         return implode(PHP_EOL,$this->getErrors());
+    }
+
+    public function throwErrors($code = 400,$first = false)
+    {
+        if($this->hasError())
+        {
+            $errors = $this->getErrors();
+        
+            throw new MultiValidatorException(!$first ? $this->toString() : $errors[key($errors)],$code);
+        }
     }
 }
 

@@ -398,16 +398,18 @@ class HarpProcess
                         }
                         else if($response instanceof HarpResponse)
                         {
+                      
                             $response->saveResponse($plain['method'],$response);
 
                             if(!$response->hasHeader(HarpResponse::FAILURE))
                             {
                                 throw new \Exception('The response does not have the mandatory {FAILURE} header.',500);
                             }
-
+                      
                             if($response->getOneHeader(HarpResponse::FAILURE) == 1)
                             {
                                 $response = $this->executeCallback($instance,$plain,$return,'failed');
+
                                 if($response['statusCallback']){ $return = $response['return']; }
                                 break 2;
                             }
@@ -422,7 +424,7 @@ class HarpProcess
                 }        
             }
         }
-        
+   
         return $return;
    }
    

@@ -9,9 +9,9 @@ class Env
     {
         $exists = false;
         
-        if(!empty($key))
+        if(array_key_exists($key,$_ENV))
         {
-            $exists = \getenv($key);
+            $exists = true;
         }
         
         return $exists;
@@ -24,6 +24,6 @@ class Env
             throw new Exception(sprintf('Key {%s} does not exists in enviroment variables!',$key));
         }
 
-        return getenv($key);
+        return $_ENV[$key];
     }
 }

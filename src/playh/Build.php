@@ -217,8 +217,8 @@ class Build
 
         $re = '/[^A-Za-z0-9]/is';
 
-        $name = preg_replace("/[^A-Za-z0-9\\/]/",'', $args[2]);
-
+        $name = preg_replace("/[^A-Za-z0-9\\/]/",'_', $args[2]);
+ 
         $listArgs = [];
         
         if(preg_match('`/`is',$name))
@@ -251,7 +251,15 @@ class Build
 
                 );
       
-         $controller = ucfirst(preg_replace("/[^A-Za-z0-9]/",'',$listArgs[2]));   
+         $controller = preg_replace("/[^A-Za-z0-9]/",'_',$listArgs[2]);   
+    
+         $ctrArray = explode('_',$controller);
+
+         $controller = '';
+         foreach($ctrArray as $ctr)
+         {
+            $controller .= ucfirst($ctr);
+         }
          
          $fileControllerBase = \file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'ControllerBase.playh');
 
@@ -407,7 +415,42 @@ class Build
 
     }
 
+    public static function entity($args,$noExit = false)
+    {
+        if(empty($args[2]))
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{module}/{entityName}!'));
+        }
 
+        $arg = explode('/',$args[2]);
+
+        dd($arg);
+
+        if(count($arg) != 3)
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{module}/{entityName}!'));
+        }
+
+        $path = Path::getProjectPath().DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.$arg[0].DIRECTORY_SEPARATOR.'modules'.DIRECTORY_SEPARATOR.$arg[1];
+
+        if(!is_dir($path))
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Not found {app}/{module} %s/%s!',$arg[0],$arg[1])));
+        }
+        
+        if(!is_dir($path.DIRECTORY_SEPARATOR.'mapper'))
+        {
+            mkdir($path.DIRECTORY_SEPARATOR.'mapper',0755,true);
+        }
+
+        $model = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'ModelORMBase.playh');
+
+        $model = str_ireplace(['{{app}}','{{module}}','{{nameModel}}','{{tableName}}'],[$arg[0],$arg[1],$arg[2],sprintf('%s%s%s',"'",$tableName,"'")],$model);
+
+        file_put_contents($path.DIRECTORY_SEPARATOR.'mapper'.DIRECTORY_SEPARATOR.$arg[2].'.php',$model);
+
+        Show::showMessage(sprintf(Show::getMessage(200),'Mapper Entity ',$arg[2]),$noExit);
+    }
     public static function model($args,$noExit = false)
     {
         if(empty($args[2]))
@@ -1118,7 +1161,7 @@ class Build
         $argsController = [
             'play-h',
             'build::controller',
-            sprintf("%s/%s/%s",$app,$module,$nameLower)
+            sprintf("%s/%s/%s",$app,$module,$params[2])
         ];
 
 
@@ -1142,7 +1185,7 @@ class Build
         self::model([
             'play-h',
             'build::model',
-            sprintf("%s/%s/%s",$app,$module,$nameLower)
+            sprintf("%s/%s/%s",$app,$module,$params[2])
         ],true);
 
         if($type != 'api')
