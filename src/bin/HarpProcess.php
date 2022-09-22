@@ -389,7 +389,14 @@ class HarpProcess
         $requestMethod = !empty($route['requestMethod']) ? $route['requestMethod'] : 'GET';
         $method = $this->Application->getProperty(HarpHttpMessage::class)->getServerRequest()->getMethod();
 
-        if($method != $requestMethod)
+        preg_match(sprintf('`%s`is',$method),$requestMethod,$result);
+
+        if(!empty($result[0]))
+        {
+            $requestMethod = $result[0];
+        }
+
+        if(empty($result[0]))
         {
             (new HarpResponse())->ClientError(
                 [
