@@ -1,0 +1,14 @@
+<?php
+namespace App\{{app}}\modules\{{module}}\entity;
+
+use Harp\lib\HarpEntityHandler\EntityHandler;
+
+class {{nameEntity}}Entity extends EntityHandler
+{
+    {{properties}}
+
+    public function __construct()
+    {
+        parent::__construct($this);
+    }
+}

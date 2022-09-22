@@ -72,6 +72,33 @@ class HarpProcess
             }
     }
 
+    private function parsePutArgs($keys,&$plainExecution)
+    {
+            $params = $this->Application->getProperty(HarpHttpMessage::class)->getBody();
+     
+            $idx = count($plainExecution['arguments']);
+
+            if(isset($keys[0]) && $keys[0] == '*')
+            {
+                $plainExecution['arguments'][$idx] = $params;
+                ++$idx;
+            }
+            else
+            {
+                foreach($keys as $key)
+                {
+                    $plainExecution['arguments'][$idx] = null;
+
+                    if(isset($params[$key]))
+                    {
+                        $plainExecution['arguments'][$idx] = $params[$key];
+                    }
+
+                    ++$idx;
+                }
+            }    
+    }       
+
     private function parsePostArgs($keys,&$plainExecution)
     {
             $params = $this->Application->getProperty(HarpHttpMessage::class)->getBody();
@@ -124,6 +151,10 @@ class HarpProcess
             else if($type == 'post')
             {
                 $this->parsePostArgs($arguments,$plainExecution);
+            }
+            else if($type == 'put')
+            {
+                $this->parsePutArgs($arguments,$plainExecution);
             }
             else if($type == 'get')
             {

@@ -421,14 +421,22 @@ class Build
         {
             Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{module}/{entityName}!'));
         }
-
+    
         $arg = explode('/',$args[2]);
-
-        dd($arg);
 
         if(count($arg) != 3)
         {
             Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{module}/{entityName}!'));
+        }
+
+        $tableName = null;
+
+        if(isset($args[3]) && preg_match('`--table=(.*)`',$args[3],$matches))
+        {
+            if(!empty($matches[1]))
+            {
+                $tableName = trim($matches[1]);
+            }
         }
 
         $path = Path::getProjectPath().DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.$arg[0].DIRECTORY_SEPARATOR.'modules'.DIRECTORY_SEPARATOR.$arg[1];
@@ -437,19 +445,40 @@ class Build
         {
             Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Not found {app}/{module} %s/%s!',$arg[0],$arg[1])));
         }
-        
-        if(!is_dir($path.DIRECTORY_SEPARATOR.'mapper'))
+
+        if(!is_dir($path.DIRECTORY_SEPARATOR.'entity'))
         {
-            mkdir($path.DIRECTORY_SEPARATOR.'mapper',0755,true);
+            mkdir($path.DIRECTORY_SEPARATOR.'entity',0755,true);
         }
 
-        $model = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'ModelORMBase.playh');
+        $props = [];
 
-        $model = str_ireplace(['{{app}}','{{module}}','{{nameModel}}','{{tableName}}'],[$arg[0],$arg[1],$arg[2],sprintf('%s%s%s',"'",$tableName,"'")],$model);
+        if(!empty($tableName))
+        {
+            Db::entity($args,true);
 
-        file_put_contents($path.DIRECTORY_SEPARATOR.'mapper'.DIRECTORY_SEPARATOR.$arg[2].'.php',$model);
+            Db::loadEnv();
+            Db::eloquentManager();
+            $Model = sprintf("App\\%s\\modules\\%s\\mapper\\%s",$arg[0],$arg[1],$arg[2]);
+            $objModel = new $Model();
 
-        Show::showMessage(sprintf(Show::getMessage(200),'Mapper Entity ',$arg[2]),$noExit);
+            $props = $objModel->getTypesColumns();
+        }
+
+        $propsEntity = "";
+
+        foreach($props as $prop => $type)
+        {
+            $propsEntity .= sprintf('%spublic ?%s $%s = null;%s',str_repeat(chr(32),8),$type,$prop,PHP_EOL);
+        }
+
+        $entity = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'EntityBase.playh');
+
+        $entity = str_ireplace(['{{app}}','{{module}}','{{nameEntity}}','{{properties}}'],[$arg[0],$arg[1],$arg[2],$propsEntity],$entity);
+
+        file_put_contents($path.DIRECTORY_SEPARATOR.'entity'.DIRECTORY_SEPARATOR.$arg[2].'Entity.php',$entity);
+
+        Show::showMessage(sprintf(Show::getMessage(200),'Entity ',$arg[2]),$noExit);
     }
     public static function model($args,$noExit = false)
     {

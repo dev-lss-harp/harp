@@ -16,6 +16,8 @@ class Db
         self::$DotEnv = new Dotenv();
         self::$DotEnv->loadEnv(Path::getProjectPath().'/.env','env_main');
         self::$DotEnv->loadEnv(Path::getProjectPath().'/.env-develop','env-develop');
+
+
         if(file_exists(Path::getProjectPath().'/.env-maintainer'))
         {
             self::$DotEnv->loadEnv(Path::getProjectPath().'/.env-maintainer','env-maintainer');

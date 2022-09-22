@@ -8,6 +8,44 @@ use Illuminate\Database\Eloquent\Model;
 class {{nameModel}} extends Model
 {
     use HasFactory;
+    
+
+    protected $mapper = [
+        'bigint|integer|smallint|tinyint' => 'int',
+        'varchar|nchar|nvarchar|char|text|longtext|mediumtext|string' => 'string',
+        'boolean' => 'bool',
+        'datetime|date|timestamp' => 'string' 
+
+    ];
 
     protected $table =  {{tableName}};
+    //for tables without primary keys uncomment
+    //protected $primaryKey = null;
+    //public $incrementing = false;
+
+    public function getTableColumns() 
+    {
+        return $this->getConnection()->getSchemaBuilder()->getColumnListing($this->getTable());
+    }
+
+    public function getTypesColumns() 
+    {
+        $types = [];
+        $list = $this->getTableColumns();
+        foreach($list as $column)
+        {
+           $type = $this->getConnection()->getSchemaBuilder()->getColumnType($this->getTable(),$column);
+        
+           foreach($this->mapper as $key => $map)
+           {
+                if(str_contains($key,$type))
+                {
+                    $types[$column]  = $map;
+                    break;
+                }
+           }
+        }
+
+        return $types;
+    }
 }
