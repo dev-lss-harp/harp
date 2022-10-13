@@ -10,5 +10,7 @@ class {{nameEntity}}Entity extends EntityHandler
     public function __construct()
     {
         parent::__construct($this);
+
+        return $this;
     }
 }

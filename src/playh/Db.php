@@ -144,6 +144,8 @@ class Db
         self::eloquentManager();
         self::createMigraionTableBaseControl();
 
+        require_once($path.DIRECTORY_SEPARATOR.'Migrate.php');
+
         $class = sprintf('\\Harp\playh\%s','Migrate');
    
         if(!\class_exists($class))
@@ -158,9 +160,9 @@ class Db
         {
             $mtd = sprintf('get%s',$migr);
 
+       
             if(\method_exists($migrate,$mtd))
             {
-            
                 $ClsMtd = $migrate->{$mtd}();
                 $ClsMtd->up();
             }
@@ -276,15 +278,27 @@ class Db
 
         //Fim criação da classe que define a tabela
 
+        $pathM = sprintf('%s%s%s%s%s%s%s%s%s',
+                            Path::getProjectPath(),
+                            DIRECTORY_SEPARATOR,
+                            'app',
+                            DIRECTORY_SEPARATOR,
+                            $app,
+                            DIRECTORY_SEPARATOR,
+                            'storage',
+                            DIRECTORY_SEPARATOR,
+                            'migrations'
+        );
+     
         //Início da classe que executa
-        if(!file_exists(__DIR__.DIRECTORY_SEPARATOR.'Migrate.php'))
+        if(!file_exists($pathM.DIRECTORY_SEPARATOR.'Migrate.php'))
         {
             $base_migrate = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'MigrateBase.playh');
             //$base_migrate = str_ireplace(['{{app}}'],[$app],$base_migrate);
-            file_put_contents(__DIR__.DIRECTORY_SEPARATOR.'Migrate.php',$base_migrate);
+            file_put_contents($pathM.DIRECTORY_SEPARATOR.'Migrate.php',$base_migrate);
         }
 
-        $migrate = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'Migrate.php');
+        $migrate = file_get_contents($pathM.DIRECTORY_SEPARATOR.'Migrate.php');
 
         if(preg_match(sprintf('`%s`',$definitiveNameClass),$migrate))
         {
@@ -400,7 +414,6 @@ class Db
         $re = '/\$orders.+\[(.*?)\]/si';
         preg_match($re,$orders,$orderArray);
 
-
         $ord = [];
         if(!empty($orderArray))
         {
@@ -421,22 +434,27 @@ class Db
             }
 
             $order = !empty($order) && is_int($order) ? $order : count($ord);
-            
+      
             if(in_array($order,$ord))
             {
                 Show::showMessage(sprintf(Show::getMessage(1000),sprintf('order {%s} already exists in the list!',$order)));
             }
         }
+        else
+        {
+            $order = 0;
+        }
 
         $ord[$definitiveNameClass] = $order;
 
         $attrOrder =  'public $orders = ['.PHP_EOL;
+    
         foreach($ord as $key => $v)
         {
             $attrOrder .= sprintf('%s%s%s%s%s%s%s%s%s',chr(32),chr(32),"'",$key,"'",'=>',$v,',',PHP_EOL);
         }
         $attrOrder .= '];'; 
-
+    
         $migrate = str_ireplace([$start_orders[0]],['//start_order'.PHP_EOL.$attrOrder.'//end_order',1],$migrate);
  
         $methods  = trim($start_methods[1]);
@@ -445,7 +463,7 @@ class Db
         self::eloquentManager();
         self::createMigraionTableBaseControl();
 
-        if(CapsuleManager::schema()->hasTable($nameTable))
+        if(!empty($create) && CapsuleManager::schema()->hasTable($nameTable))
         {
             Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Table {%s} exists in database!',$nameTable)));
         }
@@ -461,7 +479,7 @@ class Db
         //consultar o batch na base
         $baseFile = str_ireplace(['{{batch}}'],[$batch],$baseFile);
         
-        if(file_put_contents($path.DIRECTORY_SEPARATOR.$nameFile,$baseFile) && file_put_contents(__DIR__.DIRECTORY_SEPARATOR.'Migrate.php',$migrate))
+        if(file_put_contents($path.DIRECTORY_SEPARATOR.$nameFile,$baseFile) && file_put_contents($pathM.DIRECTORY_SEPARATOR.'Migrate.php',$migrate))
         {
             Show::showMessage(sprintf(Show::getMessage(200),'migrate',$nameFile));
         }

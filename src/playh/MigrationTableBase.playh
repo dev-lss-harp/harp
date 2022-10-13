@@ -15,23 +15,14 @@ class {{class_name}}
      */
     public function up()
     {
-        $sts = false;
+        CapsuleManager::schema()->table(self::TABLE_NAME,function($table){
+            $table->bigIncrements('id');
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+        });
 
-        if(!$this->exists())
-        {
-            CapsuleManager::schema()->table(self::TABLE_NAME,function($table){
-                $table->bigIncrements('id');
-                $table->timestamp('created_at')->useCurrent();
-                $table->timestamp('updated_at')->nullable();
-                $table->timestamp('deleted_at')->nullable();
-            });
-
-            $this->updateMigration('create');
-
-            $sts = true;
-        }
-
-        return $sts;
+        $this->updateMigration('update');
     }
 
     /**
@@ -39,24 +30,7 @@ class {{class_name}}
      *
      * @return void
      */
-    public function down()
-    {
-        $sts = false;
-
-        if($this->exists())
-        {
-            CapsuleManager::schema()->dropIfExists(self::TABLE_NAME);
-            $this->updateMigration('drop');
-            $sts = true;
-        }
-
-        $sts = true;
-    }
-
-    public function exists()
-    {
-        return CapsuleManager::schema()->hasTable(self::TABLE_NAME);
-    }
+    public function down(){}
 
     private function updateMigration($action)
     {
@@ -69,6 +43,6 @@ class {{class_name}}
                 ]
             );
 
-            print(sprintf('Created table {%s} sucessfull!%s',self::TABLE_NAME,PHP_EOL));
+            print(sprintf('Updated table {%s} sucessfull!%s',self::TABLE_NAME,PHP_EOL));
     }
 }

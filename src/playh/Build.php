@@ -26,9 +26,21 @@ class Build
         return $method;        
     }
 
+    public static function checkPortInUse($port) 
+    {
+        $conn = @stream_socket_client("tcp://127.0.0.1:{$port}", $errno, $errstr);
+
+        return is_resource($conn) ? fclose($conn) : false;
+    } 
+
     public static function server($args)
     {
-        $port = '8088';
+        $port = 8088;
+
+        while(self::checkPortInUse($port))
+        {
+            $port += 1;
+        }
 
         if(!empty($args[2]))
         {
@@ -480,6 +492,43 @@ class Build
 
         Show::showMessage(sprintf(Show::getMessage(200),'Entity ',$arg[2]),$noExit);
     }
+
+
+    public static function repository($args,$noExit = false)
+    {
+        if(empty($args[2]))
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{module}/{repositoryName}!'));
+        }
+    
+        $arg = explode('/',$args[2]);
+
+        if(count($arg) != 3)
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{module}/{repositoryName}!'));
+        }
+
+        $path = Path::getProjectPath().DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.$arg[0].DIRECTORY_SEPARATOR.'modules'.DIRECTORY_SEPARATOR.$arg[1];
+
+        if(!is_dir($path))
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Not found {app}/{module} %s/%s!',$arg[0],$arg[1])));
+        }
+
+        if(!is_dir($path.DIRECTORY_SEPARATOR.'repository'))
+        {
+            mkdir($path.DIRECTORY_SEPARATOR.'repository',0755,true);
+        }
+
+        $repositoryFile = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'RepositoryBase.playh');
+
+        $repository = str_ireplace(['{{app}}','{{module}}','{{nameRepository}}'],[$arg[0],$arg[1],$arg[2]],$repositoryFile);
+
+        file_put_contents($path.DIRECTORY_SEPARATOR.'repository'.DIRECTORY_SEPARATOR.$arg[2].'Repository.php',$repository);
+
+        Show::showMessage(sprintf(Show::getMessage(200),'Repository ',$arg[2]),$noExit);
+    }
+
     public static function model($args,$noExit = false)
     {
         if(empty($args[2]))

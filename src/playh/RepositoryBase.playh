@@ -1,0 +1,12 @@
+<?php 
+namespace App\{{app}}\modules\{{module}}\repository;
+
+use Illuminate\Database\Capsule\Manager as DB;
+
+class {{nameRepository}}Repository
+{
+    public function __construct()
+    {
+
+    }
+}

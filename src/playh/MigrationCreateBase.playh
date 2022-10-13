@@ -50,7 +50,7 @@ class {{class_name}}
             $sts = true;
         }
 
-        $sts = true;
+       return $sts;
     }
 
     public function exists()

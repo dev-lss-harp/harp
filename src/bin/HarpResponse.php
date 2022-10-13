@@ -3,13 +3,9 @@ namespace Harp\bin;
 
 use Exception;
 use GuzzleHttp\Psr7\Response;
-use Harp\bin\ArgumentException;
-use Harp\lib\HarpGuid\Guid;
 use Harp\lib\HarpJson\Json;
-use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\ResponseInterface;
-use stdClass;
 use Throwable;
 
 class HarpResponse extends Response
@@ -654,12 +650,19 @@ class HarpResponse extends Response
     {        
         $code = $th->getCode() >= 400 && $th->getCode() <= 599 ? $th->getCode() : 599;
 
+
         $this->ByStatus([
+            'response' => $th->getMessage(),
+            'code' => $th->getCode(),
+            'file' => $th->getFile(),
+            'lineNumber' =>  $th->getLine()
+        ],$code);
+       /* $this->ByStatus([
             'response' => $th->getMessage(),
             'code' => $th->getCode(),
             'file' => ($debugException || $this->debugException) ? $th->getFile() : $this->msgDebugDisabled,
             'lineNumber' => ($debugException || $this->debugException) ? $th->getLine() : $this->msgDebugDisabled
-        ],$code);
+        ],$code);*/
 
         return $this;
     }

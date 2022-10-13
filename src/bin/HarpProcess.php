@@ -261,7 +261,7 @@ class HarpProcess
         if($Response->getStatusCode() != $expected)
         {
             $resp = $Response->getResponse(true);
-            $message = $resp['message'] ?? 'Expected response code {%s}, found {%s}';
+            $message = $resp['message'] ?? sprintf('Expected response code {%s}, found {%s}',$expected,$Response->getStatusCode());
             $code = $Response->getStatusCode();
             throw new \Exception($message,$code);
         }
@@ -438,12 +438,12 @@ class HarpProcess
                         {
                       
                             $response->saveResponse($plain['method'],$response);
-
+                            
                             if(!$response->hasHeader(HarpResponse::FAILURE))
                             {
                                 throw new \Exception('The response does not have the mandatory {FAILURE} header.',500);
                             }
-                      
+                         
                             if($response->getOneHeader(HarpResponse::FAILURE) == 1)
                             {
                                 $response = $this->executeCallback($instance,$plain,$return,'failed');
