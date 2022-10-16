@@ -16,6 +16,8 @@ abstract class EntityHandler
     private $pagination = [];
     private $data = [];
     private $mandatoryProperties = [];
+    private $rotateToParams = [];
+    private $entityWhere = [];
     private $resultSet = 
     [
         'model' => false, 
@@ -186,22 +188,69 @@ abstract class EntityHandler
         return $newData;
     }
 
+    private function rotateToParams()
+    {
+        $transform = [];
+
+        foreach($this->data as $entity => $values)
+        {
+            $transform[$entity]['params'] = [];
+
+            if(is_array($values))
+            {
+                $transform[$entity]['params'] = $values;
+            }
+        }
+      
+        return $transform;
+    }
+
+    private function keyEntity($name)
+    {
+        return sprintf('%sEntity',$name);
+    }
+
+    public function useWhere(Array $entityWhere)
+    {
+        foreach($entityWhere as $name => $where)
+        {
+            $entity = $this->keyEntity($name);
+
+            if(array_key_exists($entity,$this->rotateToParams))
+            {
+                $this->entityWhere[$entity]['params'] = [];
+
+                foreach($where as $key)
+                {
+                    if(array_key_exists($key,$this->rotateToParams[$entity]['params']))
+                    {
+                        $this->entityWhere[$entity]['params'][$key] = $this->rotateToParams[$entity]['params'][$key];
+                    }
+                }
+            }
+        }
+
+        return $this;
+    }
+
     public function setValues($data,&$obj = null)
     {
         $obj = !($obj instanceof EntityHandler) ? $this : $obj;
 
         $data = $this->putPrefix($data,$obj,$this->getEntityShortName($obj));
 
-
         $this->data = empty($this->data) ? $data : $this->data;
-
+        
         $shortEntityName = $this->getEntityShortName($obj);
         $fullEntityName = $this->entities[$shortEntityName];
         $props = $this->props[$fullEntityName];
         $dt = $data[$shortEntityName];
         $this->propsArray[$shortEntityName] = [];
         $mandatoryProps = $this->mandatoryProperties[$shortEntityName] ?? []; 
+        $this->rotateToParams = $this->rotateToParams($data,$props);
 
+        //$this->rotateToParams = array_merge($this->rotateToParams,$this->parseParams($rotate,$props));
+        //dump($this->rotateToParams);
         foreach($props as $p)
         {
             $propValue = $p->getValue($obj);
@@ -211,10 +260,10 @@ abstract class EntityHandler
                $nameProp = $this->getEntityShortName($propValue);
                
                $obj->{$nameProp} =  $this->setValues($data,$propValue);
-           
             }
             else if(array_key_exists($p->name,$dt))
             {
+                $this->validator($p,$dt);
                 $p->setValue($obj,$dt[$p->name]);
                 $this->propsArray[$shortEntityName][$p->name] = $dt[$p->name];
             }
@@ -625,9 +674,10 @@ abstract class EntityHandler
             $fullEntityName = $this->entities[$shortEntityName];
             $props = $this->props[$fullEntityName];
 
+        
             $params = $this->parseParams($data,$props,$shortEntityName);
+            $params = !empty($params) ? $params : $this->parseParams($this->entityWhere,$props,$shortEntityName);
 
-  
             $this->pagination = $this->paginator($data[$shortEntityName],$StaticMapper::count());  
           
             if(!empty($params) && !empty($this->pagination))
