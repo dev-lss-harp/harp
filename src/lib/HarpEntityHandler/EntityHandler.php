@@ -63,8 +63,6 @@ abstract class EntityHandler
         }
     }
 
-
-
     private function getPagination(&$data)
     {
         $pagination = array_key_exists('pagination',$data) ? $data['pagination'] : [];
@@ -169,9 +167,9 @@ abstract class EntityHandler
         $withoutPrefixData = $this->normalizeWithPrefix($entities,$data);
 
         $this->normalizeWithEmpty($shortNamePrefix,$shortName,$data,$withoutPrefixData);
-
+   
         $newData = $this->traverseData($data,$entities,$newData);
-        
+
         if(empty($newData))
         {
             $intersect = array_intersect(array_keys($entities),array_keys($data));
@@ -236,11 +234,11 @@ abstract class EntityHandler
     public function setValues($data,&$obj = null)
     {
         $obj = !($obj instanceof EntityHandler) ? $this : $obj;
-
+     
         $data = $this->putPrefix($data,$obj,$this->getEntityShortName($obj));
 
         $this->data = empty($this->data) ? $data : $this->data;
-        
+      
         $shortEntityName = $this->getEntityShortName($obj);
         $fullEntityName = $this->entities[$shortEntityName];
         $props = $this->props[$fullEntityName];
@@ -249,17 +247,16 @@ abstract class EntityHandler
         $mandatoryProps = $this->mandatoryProperties[$shortEntityName] ?? []; 
         $this->rotateToParams = $this->rotateToParams($data,$props);
 
-        //$this->rotateToParams = array_merge($this->rotateToParams,$this->parseParams($rotate,$props));
-        //dump($this->rotateToParams);
         foreach($props as $p)
         {
             $propValue = $p->getValue($obj);
 
             if($propValue instanceof EntityHandler)
             {
-               $nameProp = $this->getEntityShortName($propValue);
-               
-               $obj->{$nameProp} =  $this->setValues($data,$propValue);
+                
+                $nameProp = $this->getEntityShortName($propValue);
+                
+                $obj->{$nameProp} =  $this->setValues($data,$propValue);
             }
             else if(array_key_exists($p->name,$dt))
             {
@@ -283,12 +280,11 @@ abstract class EntityHandler
 
             $ent = sprintf('%sEntity',$entity);
             $this->mandatoryProperties[$ent] = [];
-
+           
             foreach($props as $prop)
             {
                 array_push($this->mandatoryProperties[$ent],$prop);
             }
- 
         }
         
         return $this;
@@ -659,7 +655,7 @@ abstract class EntityHandler
     public function get(Model $Mapper)
     {
         $obj =  $this;
-  
+ 
         $data = $this->data;
 
         $StaticMapper = get_class($Mapper);
@@ -674,12 +670,11 @@ abstract class EntityHandler
             $fullEntityName = $this->entities[$shortEntityName];
             $props = $this->props[$fullEntityName];
 
-        
             $params = $this->parseParams($data,$props,$shortEntityName);
             $params = !empty($params) ? $params : $this->parseParams($this->entityWhere,$props,$shortEntityName);
 
             $this->pagination = $this->paginator($data[$shortEntityName],$StaticMapper::count());  
-          
+        
             if(!empty($params) && !empty($this->pagination))
             { 
                 $response = $StaticMapper::where($params)->skip($this->pagination['offset'])->take($this->pagination['limit']);

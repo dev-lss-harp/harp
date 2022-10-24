@@ -1,0 +1,68 @@
+<?php
+namespace {{namespace}};
+
+use Illuminate\Database\Capsule\Manager as CapsuleManager;
+use Illuminate\Support\Facades\DB as FDB; 
+
+class {{class_name}}
+{
+    const TABLE_NAME = '{{table_name}}';
+    const BATCH = {{batch}};
+
+    private $columns = {{columns}};
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        if(!$this->exists())
+        {
+            CapsuleManager::schema()->table(self::TABLE_NAME,function($table){
+                    {{declaration_columns}}
+            });
+
+            $this->updateMigration('update');
+        }
+        else
+        {
+            print(sprintf('columns {%s} already exists in table {%s}!%s',implode(',',$this->columns),self::TABLE_NAME,PHP_EOL));
+        }  
+    }
+
+    public function exists()
+    {
+        $columns = $this->columns;
+        for($i = 0; $i < count($this->columns);++$i)
+        {
+            if(CapsuleManager::schema()->hasColumn(self::TABLE_NAME,$this->columns[$i]))
+            {
+                unset($columns[$i]);
+            }
+        }
+        
+        return empty($columns);
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down(){}
+
+    private function updateMigration($action)
+    {
+            CapsuleManager::table('migrations')->insert(
+                [
+                  'migration' => __CLASS__,
+                  'table' => self::TABLE_NAME,
+                  'action' => $action,
+                  'batch' => self::BATCH
+                ]
+            );
+
+            print(sprintf('Updated table {%s} sucessfull!%s',self::TABLE_NAME,PHP_EOL));
+    }
+}

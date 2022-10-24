@@ -2,11 +2,9 @@
 namespace Harp\lib\HarpJwt;
 
 use DateTime;
-use Exception;
-use GuzzleHttp\Psr7\Header;
-use Harp\bin\ArgumentException;
 use JsonSerializable;
 use Throwable;
+use Exception;
 
 class ParseJwt implements JsonSerializable
 {
@@ -37,7 +35,7 @@ class ParseJwt implements JsonSerializable
      
         if(count($p) != 3)
         {
-            throw new ArgumentException
+            throw new Exception
             (
                 'Malformed string invalid jwt!',
                 400
@@ -60,12 +58,14 @@ class ParseJwt implements JsonSerializable
         $signature = base64_encode(hash_hmac($alg,$this->bs64Header.'.'.$this->bs64Payload,$secret,true));
         if($this->bs64Signature != $signature)
         {
-            throw new ArgumentException
+            throw new Exception
             (
                 'Invalid signature jwt!',
-                400
+                401
             );  
         }
+
+        return true;
     }
 
     private function verifySignatureRSA($publicKey,$alg)
@@ -76,20 +76,19 @@ class ParseJwt implements JsonSerializable
         {
             $error = 'Invalid signature jwt!'.PHP_EOL;
             while($msg = openssl_error_string()){ $error .= $msg.';'; }
-            $Except = new ArgumentException
+            $Except = new Exception
             (
                 $error,
-                400,
-                [
-                    'verify' => $verify
-                ]
+                401
             );  
 
             throw $Except;
         }
+
+        return $verify;
     }
 
-    private function verifySignature($secretOrPublicKey)
+    public function verifySignature($secretOrPublicKey)
     {
         
         $alg = isset(HeaderJwt::$listAlgs[$this->header['alg']]) ? 
@@ -114,10 +113,10 @@ class ParseJwt implements JsonSerializable
 
             $this->header = @json_decode(@base64_decode($this->bs64Header),true);
             $this->payload = @json_decode(@base64_decode($this->bs64Payload),true);
-
+   
             if(!is_array($this->header) || !is_array($this->payload))
             {
-                throw new ArgumentException
+                throw new Exception
                 (
                     'Malformed string invalid jwt!',
                     400
@@ -126,7 +125,7 @@ class ParseJwt implements JsonSerializable
     
             if(!isset(HeaderJwt::$listAlgs[$this->header['alg']]) && !isset(HeaderJWt::$listSigns[$this->header['alg']]))
             {
-                throw new ArgumentException
+                throw new Exception
                 (
                     'Invalid alg: {'.$this->header['alg'].'}!',
                     400
@@ -134,7 +133,7 @@ class ParseJwt implements JsonSerializable
             }
             else if(!in_array($this->header['typ'],HeaderJwt::$listTyps))
             {
-                throw new ArgumentException
+                throw new Exception
                 (
                     'Invalid token type: {'.$this->header['typ'].'}!',
                     400
@@ -146,7 +145,7 @@ class ParseJwt implements JsonSerializable
                 $this->verifySignature($secretOrPublicKey);
             }
             
-            $this->HeaderJwt = new HeaderJWt($this->header['alg'],$this->header['typ']);
+            $this->HeaderJwt = new HeaderJWt($this->header);
             $this->PayloadJwt = new PayloadJwt();
             $this->PayloadJwt->addAll($this->payload);
         }

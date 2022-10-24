@@ -20,6 +20,7 @@ class Build
                 $method .= $ch32.$ch32.'}'.PHP_EOL;   
                 $method .= $ch32.$ch32.'catch(\Throwable $th)'.PHP_EOL;   
                 $method .= $ch32.$ch32.'{'.PHP_EOL; 
+                $method .= $ch32.$ch32.$ch32.$ch32.'throw $th;'.PHP_EOL;     
                 $method .= $ch32.$ch32.'}'.PHP_EOL;     
             $method .= $ch32.'}'.PHP_EOL;
       

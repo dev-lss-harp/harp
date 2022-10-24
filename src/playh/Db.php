@@ -172,6 +172,30 @@ class Db
         Show::showMessage(sprintf(Show::getMessage(1001),sprintf('All migrations were performed successfully!',$path)));
     }
 
+    public static function prepareColumnsMigration($baseFile,$columns)
+    {
+        $columnsArray = explode(',',$columns);
+        
+        $strColumns = '';
+
+        $declaration_columns = '';
+
+        $c = count($columnsArray);
+
+        for($i = 0; $i < $c; ++$i)
+        {
+            $declaration_columns .= ($i > 0 ? str_repeat(chr(32),20) : '').'$table->string("'.$columnsArray[$i].'",255);'.PHP_EOL;
+            $strColumns .= '"'.$columnsArray[$i].'",';
+        }
+
+        $strColumns = substr($strColumns,0,-1);
+        $strColumns = '['.$strColumns.']';
+        
+        $baseFile = str_ireplace(['{{declaration_columns}}','{{columns}}'],[$declaration_columns,$strColumns],$baseFile);
+       
+        return $baseFile;
+    }
+
     public static function create_migration($args,$noExit = false)
     {
         if(empty($args[2]) || empty($args[3]) || empty($args[4]))
@@ -179,13 +203,13 @@ class Db
             Show::showMessage(sprintf(Show::getMessage(1000),'Missed argument {--app} or {--name} or {--table|--create}!'));
         }
 
-
         $countArgs = count($args);
 
         $mName = [];
         $mTable = [];
         $mApp = [];
         $mOrder = [];
+        $mColumns = null;
 
         $name = null;
         $table = null;
@@ -193,12 +217,15 @@ class Db
         $app = null;
         $order = null;
 
+        $columns = null;
+
         for($i = 2; $i < $countArgs;++$i)
         {
             $re1 = '`--name=(.*)?`si';
             $re2 = '`--(?:create|table)=(.*)?`si';
             $re3 = '`--app=(.*)?`si';
             $re4 = '`--order=(.*)`si';
+            $re5 = '`--columns=(.*)`si';
 
             if(empty($mName[1]) && preg_match($re1,$args[$i],$mName))
             {
@@ -223,6 +250,10 @@ class Db
             else if(empty($mOrder[1]) && preg_match($re4,$args[$i],$mOrder))
             {
                 $order = intval(trim($mOrder[1]));
+            }
+            else if(empty($mColumns[1]) && preg_match($re5,$args[$i],$mColumns))
+            {
+                $columns = trim($mColumns[1]);
             }              
         }
 
@@ -248,10 +279,17 @@ class Db
         {
             $baseFile = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'MigrationCreateBase.playh');
         }
-        else
+        else if(!empty($table) && empty($columns))
         {
             $baseFile = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'MigrationTableBase.playh');
         }
+        else if(!empty($table) && !empty($columns))
+        {
+            $baseFile = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'MigrationTableColumnsBase.playh');
+        }
+
+
+        $baseFile = self::prepareColumnsMigration($baseFile,$columns);
        
         $nameClass = preg_replace("/[^A-Za-z0-9]/",'_',!empty($name) ? $name : (!empty($table) ? $table : (!empty($create) ? $create : '')));
         $parts = explode('_',$nameClass);

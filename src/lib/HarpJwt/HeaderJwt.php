@@ -3,9 +3,6 @@ namespace Harp\lib\HarpJwt;
 
 class HeaderJwt
 {
-    private const DEFAULT_ALG = 'HS256';
-    private const DEFAULT_TYP = 'JWT';
-
     public static $listAlgs = 
     [
         'HS256' => ['HS256' => 'sha256'],
@@ -25,32 +22,24 @@ class HeaderJwt
         'JWT',
     ];
 
-    private $alg;
-    private $typ;
     private $header;
     private $bs64Header;
 
-    public function __construct($alg = 'HS256',$typ = 'JWT')
+    public function __construct($header)
     {
-        $this->alg = isset(self::$listAlgs[$alg]) ? $alg :  (isset(self::$listSigns[$alg]) ? $alg : self::DEFAULT_ALG);         
-        $this->typ = in_array($alg,self::$listTyps) ? $typ : self::DEFAULT_TYP; 
+        $this->header = $header;
         $this->createHeader();
     }
 
     private function createHeader()
     {
-        $this->header = [
-            'alg' => $this->alg,
-            'typ' => $this->typ
-        ];
-
         $jse = json_encode($this->header);
         $this->bs64Header = Jwt::safeB64(base64_encode($jse));
     }
 
-    public function getHeader()
+    public function getHeader($key)
     {
-        return $this->header;
+        return  (!empty($key) && array_key_exists($key,$this->header)) ? $this->header[$key] : null;
     }
 
     public function getJwtHeader()

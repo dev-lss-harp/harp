@@ -1,7 +1,7 @@
 <?php 
 namespace Harp\lib\HarpJwt;
 
-use Harp\bin\ArgumentException;
+use Exception;
 
 class PayloadJwt
 {
@@ -13,9 +13,9 @@ class PayloadJwt
         'iss' => ['type' => 'string'],
         'sub' => ['type' => 'string'],
         'aud' => ['type' => 'array'],
-        'exp' => ['type' => 'int'],
-        'nbf' => ['type' => 'int'],
-        'iat' => ['type' => 'int'],
+        'exp' => ['type' => 'double'],
+        'nbf' => ['type' => 'double'],
+        'iat' => ['type' => 'double'],
         'jti' => ['type' => 'string'],
     ];
 
@@ -38,15 +38,13 @@ class PayloadJwt
         if(isset($this->listAttributes[$key]))
         {
             $attr = $this->listAttributes[$key];
-
+    
             if(($attr['type'] == 'string' && !is_string($val)) 
-            || ($attr['type'] == 'int' && !(is_numeric($val) && (int)$val == $val)))
+            || ($attr['type'] == 'int' && !(is_numeric($val) && (double)$val == (double)$val)))
             {
-                throw new ArgumentException
+                throw new Exception
                 (
                     'invalid type for {'.$key.'}, '.$key.' is of type {'.$attr['type'].'}!',
-                    ArgumentException::WARNING_TYPE_EXCEPTION,
-                    ArgumentException::WARNING_TYPE_EXCEPTION,
                     400
                 );
             }

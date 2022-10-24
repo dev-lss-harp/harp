@@ -85,7 +85,7 @@ class HarpHttpMessage
                 $this->parseFromStream($contentType);
             }
         }
-      
+
         $this->body = $this->sanitizeDefault($this->body);
     }
 
@@ -232,7 +232,7 @@ class HarpHttpMessage
         $acceptedAll = !empty($routeArgs[0]) && $routeArgs[0] === '*';
 
         $cntParams = count($urlParamsCopy);
- 
+   
         for($i = 0; $i < $cntParams; ++$i)
         {
             $k = $urlParamsCopy[$i];
@@ -266,8 +266,8 @@ class HarpHttpMessage
         $routeArgs = $this->parseArgsFromRoute($route);
 
         $urlParams = $this->filterParametersUrl($alias);
-        
-        $this->uriQuery = $this->getParametersByRouteArgs($urlParams,$routeArgs);
+
+        $this->uriQuery = $this->getParametersByRouteArgs($urlParams,$routeArgs);        
     }
     
     public function getBody()

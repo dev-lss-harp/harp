@@ -49,7 +49,7 @@ class HarpProcess
     private function parseGetArgs($keys,&$plainExecution)
     {
             $params = $this->Application->getProperty(HarpHttpMessage::class)->getQuery();
-
+            
             $idx = count($plainExecution['arguments']);
             if(isset($keys[0]) && $keys[0] == '*')
             {

@@ -19,6 +19,7 @@ class Jwt
     public static function unsafeB64($strBase64)
     {
         $strBase64 = trim(str_ireplace(['-','_'],['+','/'],$strBase64));
+
         return $strBase64;
     }
 
