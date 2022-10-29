@@ -156,14 +156,34 @@ class ParseJwt implements JsonSerializable
        
     }
 
-    public function isExpired() : bool
+    public function isExpired($toleranceMinutes = 0,\DateTimeZone $dateTimeZone = new \DateTimeZone('America/Bahia')) : bool
+    {
+        $expiredDate = new DateTime('now',$dateTimeZone);
+        $expiredDate->setTimestamp($this->payload['exp']);
+        $currentDate = new DateTime('now',$dateTimeZone);
+
+        if($expiredDate > $currentDate)
+        {
+            $interval = $expiredDate->diff($currentDate);
+
+            $minutes = $interval->format('%h') * 60 + $interval->format('%i');
+            
+            return $minutes - $toleranceMinutes <= 0; 
+        }
+
+        return $expiredDate < $currentDate;
+    }
+
+   /* public function isExpired($toleranceMinutes = 0) : bool
     {
         $dataExpiracao = new DateTime();
         $dataExpiracao->setTimestamp($this->payload['exp']);
         $dataAtual = new DateTime();
 
+        //if($expiredDate)
+
         return $dataExpiracao < $dataAtual;
-    }
+    }*/
 
     public function jsonSerialize() : Array
     {
