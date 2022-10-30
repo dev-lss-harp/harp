@@ -12,6 +12,7 @@ use Exception;
 use Harp\bin\Enum;
 use Harp\enum\ViewEnum;
 use ReflectionMethod;
+use stdClass;
 
 class HarpReplacer
 {
@@ -46,13 +47,16 @@ class HarpReplacer
     private function propExec()
     {
         $args = func_get_args();
-
+   
         $prop = $this->Template->getView()->getProperty($args[2]);
 
         $value =  is_scalar($prop) ? $prop : null;
 
+        $prop = is_array($prop) ? $prop : (($prop instanceof stdClass) ? (array)$prop : $prop);
+   
         if(is_array($prop) && !empty($args[3]))
         {
+           
             $k = trim($args[3]);
             $value = array_key_exists($k,$prop) ? $prop[$k] : null;
         }
