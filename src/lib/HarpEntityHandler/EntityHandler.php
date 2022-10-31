@@ -413,38 +413,11 @@ abstract class EntityHandler
         $props = $this->props[$fullEntityName];
 
         $data = $this->putPrefix($data,$obj);
+        $values = $this->mapperInsertOrUpdate($data,$obj,$shortEntityName,$fullEntityName);
 
-        foreach($props as $p)
+        foreach($values as $key => $value)
         {
-            $attr = $this->getAttributes($p,$shortEntityName);
-
-            $propValue = $p->getValue($obj);
-
-            $sProp = trim(key($attr));
-            $dProp = trim($attr[$sProp]);
-    
-            if(array_key_exists($shortEntityName,$data))
-            {
-                $composite = $this->getCompositeProps
-                            (
-                                $obj,
-                                $propValue,
-                                $dProp,
-                                $sProp,
-                                $attr,
-                                $data,
-                                $shortEntityName,
-                                $fullEntityName,
-                            );
-                       
-                if(array_key_exists($composite['sourceProp'],$composite['dt']))
-                {
-                    $objGet = $composite['objGet'];
-                    $objGet->setValues($composite['dt']);
-                    $Mapper->{$composite['destProp']} = $objGet->{$composite['sourceProp']}; 
-                }
-            }
-
+            $Mapper->{$key} = $value;
         }
 
         $Mapper->save();
@@ -468,15 +441,15 @@ abstract class EntityHandler
             if(!empty($mapperTag[1]))
             {
                 preg_match_all('`\[(.*?)\]`is',$mapperTag[1],$mapperAll);
-
+         
                 if(!empty($mapperAll[1]))
                 {
-                   
+                
                     foreach($mapperAll[1] as $map)
                     {
                         $m = explode('|',$map);
                         $db_prop = !empty($m[1]) ? $m[1] : $m[0];
-                        $attr[$p->name] = $db_prop; 
+                        $attr[!empty($m[0]) ? $m[0] : $p->name] = $db_prop; 
                     }
                 }
             }
@@ -491,7 +464,34 @@ abstract class EntityHandler
         return end($name);
     }
 
-    private function parseParams(&$data,$props)
+    private function getNamespaceByPropEntity(ReflectionProperty $p)
+    {
+        $pos = mb_strrpos($p->class,"\\");
+        return mb_substr($p->class,0,$pos);
+    }
+
+    private function getParamsExists(Array $data,string $shortName,string $shortParentName)
+    {
+        $params = [];
+
+        if(
+            array_key_exists($shortParentName,$data) 
+            && 
+            array_key_exists('params',$data[$shortParentName]))
+        {
+            $shortWithoutPrefix = str_ireplace('Entity','',$shortName);
+            $params =  array_key_exists($shortName,$data[$shortParentName]['params']) ? $data[$shortParentName]['params'] : $params;
+            
+            if(empty($params) && array_key_exists($shortWithoutPrefix,$data[$shortParentName]['params']))
+            {
+                $params = $data[$shortParentName]['params'][$shortWithoutPrefix];
+            }
+        }
+
+        return $params;
+    }
+
+    private function parseParams(&$data,$props,$obj)
     {
         $params = [];
 
@@ -516,6 +516,21 @@ abstract class EntityHandler
              {
                 $comment = $prop->getDocComment();
 
+                $propValue = $prop->getValue($obj);
+
+                $subParam = [];
+
+                if($propValue instanceof EntityHandler)
+                {
+                    $shortSub = $this->getEntityShortName($propValue);
+
+                    $subParam = $this->getParamsExists($data,$shortSub,$short);
+
+                    if(empty($subParam)){ continue; }
+
+                    $p = $subParam;
+                }
+              
                 if(!empty($comment) && preg_match('`\<mapper\>(.*?)\<\/mapper\>`is',$comment,$mapperTag))
                 {
                     if(!empty($mapperTag[1]))
@@ -527,7 +542,7 @@ abstract class EntityHandler
                             foreach($mapperAll[1] as $map)
                             {
                                 $m = explode('|',$map);
-
+                                
                                 if(array_key_exists($m[0],$p))
                                 {
                                     $this->validator($prop,$p);
@@ -552,6 +567,49 @@ abstract class EntityHandler
         return $params;
     }
 
+    private function mapperInsertOrUpdate(Array $data,EntityHandler $obj,string $shortEntityName,string $fullEntityName,ReflectionProperty $propParent = null)
+    {
+        $values = [];
+        foreach($this->props[$fullEntityName] as $prop)
+        {
+            $pValue = $prop->getValue($obj);
+            
+            if($pValue instanceof EntityHandler)
+            {
+                $subShort = $this->getEntityShortName($pValue);
+
+                if(array_key_exists($subShort,$data))
+                {
+                    $subFullEntityName = $this->entities[$subShort];
+
+                    $val = $this->mapperInsertOrUpdate($data,$pValue,$subShort,$subFullEntityName,$prop);
+
+                    $values = array_merge($values,$val);
+                }                
+            }
+            else
+            {
+                if(array_key_exists($prop->name,$data[$shortEntityName]))
+                {
+                    $attrs = $this->getAttributes(!empty($propParent) ? $propParent : $prop);
+
+                    foreach($attrs as $key => $attr)
+                    {
+
+                        if(array_key_exists($key,$data[$shortEntityName]))
+                        {
+                            $values[$attr] = $prop->getValue($obj);
+                        }
+                        
+                    }
+                }
+
+            }
+        }
+        
+        return $values;
+    }
+
     public function change(Model $Mapper)
     {        
 
@@ -565,45 +623,21 @@ abstract class EntityHandler
 
         $StaticMapper = get_class($Mapper);
 
-        $list =  $this->toArray();
+        $params = $this->parseParams($data,$props,$obj);
+        $params = !empty($params) ? $params : $this->parseParams($this->entityWhere,$props,$obj);
+        $values = $this->mapperInsertOrUpdate($data,$obj,$shortEntityName,$fullEntityName);
 
-        $params = $this->parseParams($data,$props);
-        $values = [];
-        foreach($props as $p)
+        if(!empty($params))
         {
-            $attr = $this->getAttributes($p,$shortEntityName);
-
-            $propValue = $p->getValue($obj);
-
-            $dt = $list[$shortEntityName];
-
-            $destProp = trim($attr[0]);
-            $sourceProp = $p->name; 
-
-            if(array_key_exists($shortEntityName,$data))
-            {
-                $composite = $this->getCompositeProps
-                            (
-                                $obj,
-                                $propValue,
-                                $destProp,
-                                $sourceProp,
-                                $attr,
-                                $data,
-                                $shortEntityName,
-                                $fullEntityName,
-                            );
-
-                if(array_key_exists($composite['sourceProp'],$composite['dt']))
-                {
-                    $values[$composite['destProp']] =  $dt[$composite['sourceProp']];
-                }            
-            }
+            $StaticMapper::where($params)->update($values);
+            $this->putPrimaryKey($Mapper,$obj,$shortEntityName,'update');
         }
+        else
+        {
+            $StaticMapper::update($values);
+        }      
 
-        $StaticMapper::where($params['db'])->update($values);
-
-        $this->putPrimaryKey($Mapper,$obj,$shortEntityName,'update');
+        
 
         return $this;
     }
@@ -670,8 +704,8 @@ abstract class EntityHandler
             $fullEntityName = $this->entities[$shortEntityName];
             $props = $this->props[$fullEntityName];
 
-            $params = $this->parseParams($data,$props,$shortEntityName);
-            $params = !empty($params) ? $params : $this->parseParams($this->entityWhere,$props,$shortEntityName);
+            $params = $this->parseParams($data,$props,$obj);
+            $params = !empty($params) ? $params : $this->parseParams($this->entityWhere,$props,$obj);
 
             $this->pagination = $this->paginator($data[$shortEntityName],$StaticMapper::count());  
         
