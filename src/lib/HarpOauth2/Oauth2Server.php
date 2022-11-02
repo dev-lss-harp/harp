@@ -47,19 +47,26 @@ class Oauth2Server
         );
     }
 
-    public function enablePasswordGrant(UserRepositoryInterface $userRepository, RefreshTokenRepositoryInterface $refreshTokenRepository)
+    public function enablePasswordGrant
+    (
+        UserRepositoryInterface $UserRepository,
+        RefreshTokenRepositoryInterface $RefresTokenRepository,
+        $expired = 'PT1H',
+        $refreshExpired = 'P1M'
+    )
     {
-        $grant =  new \League\OAuth2\Server\Grant\PasswordGrant(
-            $userRepository,
-            $refreshTokenRepository
-        );
-
-        $grant->setRefreshTokenTTL(new \DateInterval('P1M'));
-
-        $this->Server->enableGrantType(
-            $grant,
-            new \DateInterval('PT1H')
-        );
+        $grant = new \League\OAuth2\Server\Grant\PasswordGrant(
+            $UserRepository,
+            $RefresTokenRepository
+       );
+       
+       $grant->setRefreshTokenTTL(new \DateInterval($refreshExpired)); // refresh tokens will expire after 1 month
+       
+       // Enable the password grant on the server
+       $this->Server->enableGrantType(
+           $grant,
+           new \DateInterval($expired) // access tokens will expire after 1 hour
+       );
     }
 
     public function enableAuthCodeGrant(AuthCodeRepositoryInterface $authCodeRepository, RefreshTokenRepositoryInterface $refreshTokenRepository)

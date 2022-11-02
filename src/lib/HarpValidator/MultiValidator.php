@@ -75,7 +75,18 @@ class MultiValidator
         
         foreach($fnArgs as $k => $v)
         {
-            $fnArgs[$k] = is_string($v) ? trim($v) : $v;
+            if(is_scalar($v))
+            {
+                $fnArgs[$k] = is_string($v) ? trim($v) : $v;
+            }
+            else if(is_object($v) || is_array($v))
+            {
+                foreach($v as $k2 => $v2)
+                {
+                    $fnArgs[$k] = is_string($v2) ? trim($v2) : $v2;
+                }
+            }
+            
         }
 
         $Reflection = new \ReflectionMethod($this->validator, $method);

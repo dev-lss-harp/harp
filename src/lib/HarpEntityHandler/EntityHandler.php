@@ -213,17 +213,33 @@ abstract class EntityHandler
         foreach($entityWhere as $name => $where)
         {
             $entity = $this->keyEntity($name);
-
+           
             if(array_key_exists($entity,$this->rotateToParams))
             {
-                $this->entityWhere[$entity]['params'] = [];
 
-                foreach($where as $key)
-                {
-                    if(array_key_exists($key,$this->rotateToParams[$entity]['params']))
+                $this->entityWhere[$entity]['params'] = [];
+           
+                foreach($where as $k => $v)
+                {     
+
+                    if(is_scalar($v))
                     {
-                        $this->entityWhere[$entity]['params'][$key] = $this->rotateToParams[$entity]['params'][$key];
+                        if(array_key_exists($v,$this->rotateToParams[$entity]['params']))
+                        {
+                            $this->entityWhere[$entity]['params'][$v] = $this->rotateToParams[$entity]['params'][$v];
+                        }
                     }
+                    else if(is_array($v) || is_object($v))
+                    {
+                        foreach($v as $k2 => $v2)
+                        {
+                            if(array_key_exists($k2,$this->rotateToParams[$entity]['params'][$k]))
+                            {
+                                $this->entityWhere[$entity]['params'][$k2] = $this->rotateToParams[$entity]['params'][$k][$k2];
+                            }
+                        }
+                    }
+             
                 }
             }
         }
@@ -487,6 +503,15 @@ abstract class EntityHandler
                 $params = $data[$shortParentName]['params'][$shortWithoutPrefix];
             }
         }
+        else if
+        (
+            array_key_exists($shortName,$data) 
+            && 
+            array_key_exists('params',$data[$shortName])
+        )
+        {
+            $params = $data[$shortName]['params'];
+        }
 
         return $params;
     }
@@ -509,7 +534,7 @@ abstract class EntityHandler
                 :
                 []
               );
-
+        
              $aggregate = (\array_key_exists($prop->name,$data) && \array_key_exists('params',$data[$prop->name]));
   
              if(!empty($p))
@@ -523,9 +548,9 @@ abstract class EntityHandler
                 if($propValue instanceof EntityHandler)
                 {
                     $shortSub = $this->getEntityShortName($propValue);
-
+             
                     $subParam = $this->getParamsExists($data,$shortSub,$short);
-
+             
                     if(empty($subParam)){ continue; }
 
                     $p = $subParam;
@@ -533,6 +558,7 @@ abstract class EntityHandler
               
                 if(!empty($comment) && preg_match('`\<mapper\>(.*?)\<\/mapper\>`is',$comment,$mapperTag))
                 {
+                
                     if(!empty($mapperTag[1]))
                     {
                         preg_match_all('`\[(.*?)\]`is',$mapperTag[1],$mapperAll);
@@ -702,13 +728,12 @@ abstract class EntityHandler
    
             $shortEntityName = $this->getEntityShortName($obj);
             $fullEntityName = $this->entities[$shortEntityName];
-            $props = $this->props[$fullEntityName];
+            $props = $this->props[$fullEntityName]; 
+            $params = !empty($this->entityWhere) ? $this->parseParams($this->entityWhere,$props,$obj) : $this->parseParams($data,$props,$obj);
 
-            $params = $this->parseParams($data,$props,$obj);
-            $params = !empty($params) ? $params : $this->parseParams($this->entityWhere,$props,$obj);
-
+       
             $this->pagination = $this->paginator($data[$shortEntityName],$StaticMapper::count());  
-        
+           
             if(!empty($params) && !empty($this->pagination))
             { 
                 $response = $StaticMapper::where($params)->skip($this->pagination['offset'])->take($this->pagination['limit']);
