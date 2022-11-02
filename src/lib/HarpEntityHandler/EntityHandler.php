@@ -486,7 +486,7 @@ abstract class EntityHandler
         return mb_substr($p->class,0,$pos);
     }
 
-    private function getParamsExists(Array $data,string $shortName,string $shortParentName)
+    private function getParamsWithParent(Array $data,string $shortName,string $shortParentName)
     {
         $params = [];
 
@@ -495,15 +495,24 @@ abstract class EntityHandler
             && 
             array_key_exists('params',$data[$shortParentName]))
         {
+  
             $shortWithoutPrefix = str_ireplace('Entity','',$shortName);
             $params =  array_key_exists($shortName,$data[$shortParentName]['params']) ? $data[$shortParentName]['params'] : $params;
-            
+
             if(empty($params) && array_key_exists($shortWithoutPrefix,$data[$shortParentName]['params']))
             {
                 $params = $data[$shortParentName]['params'][$shortWithoutPrefix];
             }
         }
-        else if
+
+        return $params;
+    }
+
+    private function getParamsWithoutParent(Array $data,string $shortName,string $shortParentName)
+    {
+        $params = [];
+
+        if
         (
             array_key_exists($shortName,$data) 
             && 
@@ -511,6 +520,17 @@ abstract class EntityHandler
         )
         {
             $params = $data[$shortName]['params'];
+        }
+
+        return $params;
+    }
+
+    private function getParamsExists(Array $data,string $shortName,string $shortParentName)
+    {
+        $params = $this->getParamsWithParent($data,$shortName,$shortParentName);
+        if(empty($params))
+        {
+            $params = $this->getParamsWithoutParent($data,$shortName,$shortParentName);
         }
 
         return $params;
@@ -731,7 +751,7 @@ abstract class EntityHandler
             $props = $this->props[$fullEntityName]; 
             $params = !empty($this->entityWhere) ? $this->parseParams($this->entityWhere,$props,$obj) : $this->parseParams($data,$props,$obj);
 
-       
+
             $this->pagination = $this->paginator($data[$shortEntityName],$StaticMapper::count());  
            
             if(!empty($params) && !empty($this->pagination))
