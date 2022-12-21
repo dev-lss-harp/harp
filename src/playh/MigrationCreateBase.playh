@@ -13,20 +13,20 @@ class {{class_name}}
      *
      * @return void
      */
-    public function up()
+    public function up($conn = 'default')
     {
         $sts = false;
 
-        if(!$this->exists())
+        if(!$this->exists($conn))
         {
-            CapsuleManager::schema()->create(self::TABLE_NAME,function($table){
+            CapsuleManager::schema($conn)->create(self::TABLE_NAME,function($table){
                 $table->bigIncrements('id');
                 $table->timestamp('created_at')->useCurrent();
                 $table->timestamp('updated_at')->nullable();
                 $table->timestamp('deleted_at')->nullable();
             });
 
-            $this->updateMigration('create');
+            $this->updateMigration('create',$conn);
 
             $sts = true;
         }
@@ -39,28 +39,28 @@ class {{class_name}}
      *
      * @return void
      */
-    public function down()
+    public function down($conn = 'default')
     {
         $sts = false;
 
-        if($this->exists())
+        if($this->exists($conn))
         {
-            CapsuleManager::schema()->dropIfExists(self::TABLE_NAME);
-            $this->updateMigration('drop');
+            CapsuleManager::schema($conn)->dropIfExists(self::TABLE_NAME);
+            $this->updateMigration('drop',$conn);
             $sts = true;
         }
 
        return $sts;
     }
 
-    public function exists()
+    public function exists($conn = 'default')
     {
-        return CapsuleManager::schema()->hasTable(self::TABLE_NAME);
+        return CapsuleManager::schema($conn)->hasTable(self::TABLE_NAME);
     }
 
-    private function updateMigration($action)
+    private function updateMigration($action,$conn)
     {
-            CapsuleManager::table('migrations')->insert(
+            CapsuleManager::connection($conn)->table('migrations')->insert(
                 [
                   'migration' => __CLASS__,
                   'table' => self::TABLE_NAME,

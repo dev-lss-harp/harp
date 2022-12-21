@@ -9,6 +9,7 @@ class {{nameModel}} extends Model
 {
     use HasFactory;
     
+    protected $connection = '{{nameConn}}';
 
     protected $mapper = [
         'bigint|integer|smallint|tinyint' => 'int',

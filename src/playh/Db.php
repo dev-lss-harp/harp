@@ -10,6 +10,7 @@ require_once(__DIR__.DIRECTORY_SEPARATOR.'Show.php');
 class Db
 {
     private static $DotEnv;
+    private static $connections = [];
     
     public static function loadEnv()
     {
@@ -26,27 +27,58 @@ class Db
 
     public static function eloquentManager()
     {
-        $db_config = [
-            'driver' => $_ENV['DB_CONNECTION'],
-            'host' => $_ENV['DB_HOST_CMD'],
-            'port' => $_ENV['DB_PORT'],
-            'database' => $_ENV['DB_DATABASE'],
-            'username' => $_ENV['DB_USERNAME'],
-            'password' => $_ENV['DB_PASSWORD'],
-        ];
+        $connetionsKeys = [
+            'driver' => 'DB_CONNECTION',
+            'host' => 'DB_HOST',
+            'port' => 'DB_PORT',
+            'database' => 'DB_DATABASE',
+            'username' => 'DB_USERNAME',
+            'password' => 'DB_PASSWORD'
+        ]; 
 
         $Manager = new CapsuleManager();
-        $Manager->addConnection($db_config);
+
+        $i = 0;
+
+        while($i < 10)
+        {
+            $prefix = $i == 0 ? '' : '_'.$i;
+            $name = $i == 0 ? 'default' : 'default_'.$i;
+
+            $db_config = [];
+
+            foreach($connetionsKeys as $key => $envKey)
+            {
+                $kEnv = sprintf('%s%s',$envKey,$prefix);
+
+                if(array_key_exists($kEnv,$_ENV))
+                {
+                    $db_config[$key] = $_ENV[$kEnv];
+                }   
+            }
+
+            if(!empty($db_config))
+            {
+                self::$connections[] = $name;
+                $Manager->addConnection($db_config,$name);
+            }
+
+            ++$i;
+        }
+
         $Manager->setAsGlobal();
         $Manager->bootEloquent();
     }
 
     private static function createMigraionTableBaseControl()
     {
-        if(!CapsuleManager::schema()->hasTable('migrations'))
+        foreach(self::$connections as $name)
         {
-            $TBMigration = new MigrationTableBaseControl();
-            $TBMigration->up();
+            if(!CapsuleManager::schema($name)->hasTable('migrations'))
+            {
+                $TBMigration = new MigrationTableBaseControl();
+                $TBMigration->up($name);
+            }
         }
     }
 
@@ -59,14 +91,22 @@ class Db
 
         $arg = explode('/',$args[2]);
 
-        $tableName = trim($arg[2]);
+        $extraArgs = [];
+        $k = count($args) - 1;    
 
-        if(isset($args[3]) && preg_match('`--table=(.*)`',$args[3],$matches))
+        while($k >= 2)
         {
-            if(!empty($matches[1]))
+            if
+                (
+                    preg_match('`--(table)=(.*)`',$args[$k],$matches)
+                    ||
+                    preg_match('`--(conn)=(.*)`',$args[$k],$matches)
+                )
             {
-                $tableName = trim($matches[1]);
+                $extraArgs[$matches[1]] = trim($matches[2]);
             }
+
+            --$k;
         }
 
         if(count($arg) != 3)
@@ -74,13 +114,14 @@ class Db
             Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{module}/{entityName}!'));
         }
 
-        $path = Path::getProjectPath().DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.$arg[0].DIRECTORY_SEPARATOR.'modules'.DIRECTORY_SEPARATOR.$arg[1];
+        $pathApp = Path::getProjectPath().DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.$arg[0];
+        $path = $pathApp.DIRECTORY_SEPARATOR.'modules'.DIRECTORY_SEPARATOR.$arg[1];
 
-        if(!is_dir($path))
+        if(!is_dir($pathApp))
         {
-            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Not found {app}/{module} %s/%s!',$arg[0],$arg[1])));
+            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Not found {app} %s!',$arg[0])));
         }
-        
+ 
         if(!is_dir($path.DIRECTORY_SEPARATOR.'mapper'))
         {
             mkdir($path.DIRECTORY_SEPARATOR.'mapper',0755,true);
@@ -88,7 +129,7 @@ class Db
 
         $model = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'ModelORMBase.playh');
 
-        $model = str_ireplace(['{{app}}','{{module}}','{{nameModel}}','{{tableName}}'],[$arg[0],$arg[1],$arg[2],sprintf('%s%s%s',"'",$tableName,"'")],$model);
+        $model = str_ireplace(['{{app}}','{{module}}','{{nameModel}}','{{tableName}}','{{nameConn}}'],[$arg[0],$arg[1],$arg[2],sprintf('%s%s%s',"'",$extraArgs['table'],"'"),(!empty($extraArgs['conn']) ? $extraArgs['conn'] : 'default')],$model);
 
         file_put_contents($path.DIRECTORY_SEPARATOR.'mapper'.DIRECTORY_SEPARATOR.$arg[2].'.php',$model);
 
@@ -97,7 +138,7 @@ class Db
 
     public static function migrate($args,$noExit = false)
     {
-        if(empty($args[1]))
+        if(empty($args[1]) || empty($args[2]))
         {
             Show::showMessage(sprintf(Show::getMessage(1000),'Missed argument {--app}!'));
         }
@@ -107,14 +148,30 @@ class Db
         $mApp = [];
         $app = null;
 
+        $mName = [];
+        $name = null;
+
+        $mConn = [];
+        $conn = 'default';
+
         for($i = 1; $i < $countArgs;++$i)
         {
             $re3 = '`--app=(.*)?`si';
+            $re4 = '`--name=(.*)?`si';
+            $re5 = '`--conn=(.*)?`si';
 
             if(empty($mApp[1]) && preg_match($re3,$args[$i],$mApp))
             {
                 $app = trim($mApp[1]);
-            }              
+            }
+            else if(empty($mName[1]) && preg_match($re4,$args[$i],$mName))
+            {
+                $name = trim($mName[1]);
+            }  
+            else if(empty($mConn[1]) && preg_match($re5,$args[$i],$mConn))
+            {
+                $conn = trim($mConn[1]);
+            }               
         }
 
         if(empty($app))
@@ -154,21 +211,34 @@ class Db
         }
 
         $migrate = new Migrate();
-        asort($migrate->orders);
 
-        foreach($migrate->orders as $migr => $ord)
+        if(!empty($name))
         {
-            $mtd = sprintf('get%s',$migr);
+            $mtd = sprintf('get%s',$name);
 
-       
             if(\method_exists($migrate,$mtd))
             {
                 $ClsMtd = $migrate->{$mtd}();
-                $ClsMtd->up();
+                $ClsMtd->up($conn);
             }
-
         }
-        
+        else
+        {
+            asort($migrate->orders);
+
+            foreach($migrate->orders as $migr => $ord)
+            {
+                $mtd = sprintf('get%s',$migr);
+    
+                if(\method_exists($migrate,$mtd))
+                {
+                    $ClsMtd = $migrate->{$mtd}();
+                    $ClsMtd->up($conn);
+                }
+    
+            }
+        }
+
         Show::showMessage(sprintf(Show::getMessage(1001),sprintf('All migrations were performed successfully!',$path)));
     }
 

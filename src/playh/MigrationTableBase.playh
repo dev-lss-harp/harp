@@ -13,16 +13,16 @@ class {{class_name}}
      *
      * @return void
      */
-    public function up()
+    public function up($conn = 'default')
     {
-        CapsuleManager::schema()->table(self::TABLE_NAME,function($table){
+        CapsuleManager::schema($conn)->table(self::TABLE_NAME,function($table){
             $table->bigIncrements('id');
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
         });
 
-        $this->updateMigration('update');
+        $this->updateMigration('update',$conn);
     }
 
     /**
@@ -30,11 +30,11 @@ class {{class_name}}
      *
      * @return void
      */
-    public function down(){}
+    public function down($conn = 'default'){}
 
-    private function updateMigration($action)
+    private function updateMigration($action,$conn)
     {
-            CapsuleManager::table('migrations')->insert(
+            CapsuleManager::connection($conn)->table('migrations')->insert(
                 [
                   'migration' => __CLASS__,
                   'table' => self::TABLE_NAME,

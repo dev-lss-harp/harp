@@ -10,10 +10,10 @@ class MigrationTableBaseControl
      *
      * @return void
      */
-    public function up()
+    public function up($name = 'default')
     {
         
-        CapsuleManager::schema()->create('migrations',function($table){
+        CapsuleManager::schema($name)->create('migrations',function($table){
             $t = microtime(true);
             $micro = sprintf("%06d",($t - floor($t)) * 1000000);
             $d = new \DateTime( date('Y-m-d H:i:s.'.$micro, $t));
@@ -32,8 +32,8 @@ class MigrationTableBaseControl
      *
      * @return void
      */
-    public function down()
+    public function down($name = 'default')
     {
-        CapsuleManager::schema()->dropIfExists('migrations');
+        CapsuleManager::schema($name)->dropIfExists('migrations');
     }
 }
