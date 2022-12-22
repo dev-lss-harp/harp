@@ -31,7 +31,7 @@ class {{__name}} extends HarpApplication
    public function config()
    {
       //env files
-      $this->dotenv->loadEnv($this->pathRoot.DIRECTORY_SEPARATOR.AppEnum::ENV_DEVELOP->value);
+      $this->dotenv->loadEnv(PATH_PROJECT.DIRECTORY_SEPARATOR.AppEnum::ENV_DEVELOP->value);
       $this->setProperty(AppEnum::StorageDir->value,new Directory(new Storage\Disk(PATH_STORAGE)));
 
       //storage
