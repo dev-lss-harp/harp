@@ -434,7 +434,7 @@ class Build
         {
             Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{module}/{entityName}!'));
         }
-    
+
         $arg = explode('/',$args[2]);
 
         if(count($arg) != 3)
@@ -442,21 +442,13 @@ class Build
             Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{module}/{entityName}!'));
         }
 
-        $tableName = null;
-
-        if(isset($args[3]) && preg_match('`--table=(.*)`',$args[3],$matches))
-        {
-            if(!empty($matches[1]))
-            {
-                $tableName = trim($matches[1]);
-            }
-        }
+        $extraArguments = Utils::parseExtraArguments($args);
 
         $path = Path::getProjectPath().DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.$arg[0].DIRECTORY_SEPARATOR.'modules'.DIRECTORY_SEPARATOR.$arg[1];
 
-        if(!is_dir($path))
+        if(!is_dir(Path::getProjectPath().DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.$arg[0]))
         {
-            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Not found {app}/{module} %s/%s!',$arg[0],$arg[1])));
+            Show::showMessage(sprintf(Show::getMessage(1000),sprintf('Not found {app} %s!',$arg[0])));
         }
 
         if(!is_dir($path.DIRECTORY_SEPARATOR.'entity'))
@@ -466,9 +458,21 @@ class Build
 
         $props = [];
 
-        if(!empty($tableName))
+        if(!empty($extraArguments['table']))
         {
-            Db::entity($args,true);
+            $args2 = [
+                 $args[0],
+                'db::entity',
+                $args[2],
+                '--table='.$extraArguments['table'],
+            ];
+
+            if(!empty($extraArguments['conn']))
+            {
+                $args2[] = '--conn='.$extraArguments['conn'];
+            }
+
+            Db::entity($args2,true);
 
             Db::loadEnv();
             Db::eloquentManager();
@@ -574,12 +578,12 @@ class Build
                     'model'
 
                 );
-           
+
          $model = ucfirst(preg_replace("/[^A-Za-z0-9]/",'',$listArgs[2]));   
          
          $fileModelBase = \file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'ModelBase.playh');
  
-         $defaultMethod = self::createMethod('index');
+         $defaultMethod = self::createMethod(!empty($listArgs[3]) ? $listArgs[3] : 'index');
          $file = str_ireplace(
              ['{{appName}}','{{moduleName}}','{{nameModel}}','{{attributesConstruct}}','{{defaultMethod}}'],
              [$listArgs[0],$listArgs[1],$model,'',$defaultMethod],
@@ -1215,48 +1219,31 @@ class Build
             mkdir($pathModule,0775,true);
         }
 
-        $mType = [];
-        $mShort = [];
-        $type = '';
-        $short = '';
-
-        for($i = 3; $i < count($args);++$i)
-        {
-            $re = '`--type=(.*)?`si';
-            $re2 = '`--short=(.*)?`si';
-
-            if(empty($mType[1]) && preg_match($re,$args[$i],$mType))
-            {
-                $type = $mType[1];
-            }
-            else if(empty($mShort[1]) && preg_match($re2,$args[$i],$mShort))
-            {
-                $short  = $mShort[1];
-            } 
-        }
+        $extraArgs = Utils::parseExtraArguments($args);
 
         $nameLower = mb_strtolower($params[2]);
 
+      
+        $ctrPath =  sprintf("%s/%s/%s%s",$app,$module,$params[2],isset($params[3]) ? sprintf('/%s',$params[3]) : '');
         $argsController = [
             'play-h',
             'build::controller',
-            sprintf("%s/%s/%s",$app,$module,$params[2])
+            $ctrPath
         ];
 
-
-        if(!empty($type) && $type = 'api')
+        if(!empty($extraArgs['type']) && $extraArgs['type'] = 'api')
         {
             array_push($argsController,'--api=true');
         }
 
-        if(!empty($short))
+        if(!empty($extraArgs['short']))
         {
-            if(preg_match(sprintf('`%s`',$app),$short))
+            if(preg_match(sprintf('`%s`',$app),$extraArgs['short']))
             {
                 Show::showMessage(sprintf(Show::getMessage(1000),sprintf('The string app name {%s} is not allowed to be part of the short name!.',$app))); 
             }
 
-            array_push($argsController,'--short='.$short);
+            array_push($argsController,'--short='.$extraArgs['short']);
         }
 
         self::controller($argsController,true);
@@ -1264,15 +1251,16 @@ class Build
         self::model([
             'play-h',
             'build::model',
-            sprintf("%s/%s/%s",$app,$module,$params[2])
+            $ctrPath
         ],true);
 
-        if($type != 'api')
+        if($extraArgs['type'] != 'api')
         {
+            $vwPath = sprintf("%s/%s/%s%s",$app,$module,'home',isset($params[3]) ? sprintf('/%s',$params[3]) : '');
             self::view([
                 'play-h',
                 'build::view',
-                sprintf("%s/%s/%s",$app,$module,'home'),
+                $vwPath,
                 '--layout='.$module
             ],true);
     

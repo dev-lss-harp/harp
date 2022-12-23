@@ -1,6 +1,7 @@
 <?php
 namespace Harp\playh;
 
+use Exception;
 use Symfony\Component\Dotenv\Dotenv;
 use Illuminate\Database\Capsule\Manager as CapsuleManager;
 
@@ -56,7 +57,7 @@ class Db
                     $db_config[$key] = $_ENV[$kEnv];
                 }   
             }
-
+    
             if(!empty($db_config))
             {
                 self::$connections[] = $name;
@@ -64,6 +65,11 @@ class Db
             }
 
             ++$i;
+        }
+
+        if(empty(self::$connections))
+        {
+            Show::showMessage(sprintf(Show::getMessage(1000),'No database connection was configured in the .env file.'),false);
         }
 
         $Manager->setAsGlobal();
@@ -84,6 +90,7 @@ class Db
 
     public static function entity($args,$noExit = false)
     {
+      
         if(empty($args[2]))
         {
             Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{entityName}!'));
@@ -91,28 +98,12 @@ class Db
 
         $arg = explode('/',$args[2]);
 
-        $extraArgs = [];
-        $k = count($args) - 1;    
-
-        while($k >= 2)
-        {
-            if
-                (
-                    preg_match('`--(table)=(.*)`',$args[$k],$matches)
-                    ||
-                    preg_match('`--(conn)=(.*)`',$args[$k],$matches)
-                )
-            {
-                $extraArgs[$matches[1]] = trim($matches[2]);
-            }
-
-            --$k;
-        }
-
         if(count($arg) != 3)
         {
             Show::showMessage(sprintf(Show::getMessage(1000),'required {app}/{module}/{entityName}!'));
         }
+
+        $extraArgs = Utils::parseExtraArguments($args);
 
         $pathApp = Path::getProjectPath().DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.$arg[0];
         $path = $pathApp.DIRECTORY_SEPARATOR.'modules'.DIRECTORY_SEPARATOR.$arg[1];
