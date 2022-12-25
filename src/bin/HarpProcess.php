@@ -320,7 +320,7 @@ class HarpProcess
                 $ReflectionMethod = $this->ReflectionClass->getMethod($method);
 
                 $arguments = $this->getMethodParameters($ReflectionMethod,$arguments);
-  
+
                 $ReflectionMethod->setAccessible(true);
                
                 $return = $ReflectionMethod->invokeArgs($instance,$arguments); 

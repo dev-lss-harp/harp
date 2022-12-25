@@ -62,7 +62,12 @@ class PayloadJwt
         $this->bs64Payload = Jwt::safeB64(base64_encode($jse));
     }
 
-    public function getPayload()
+    public function getPayloadByKey(string $key)
+    {
+        return (!empty($key) && array_key_exists($key,$this->payload)) ? $this->payload[$key] : null;
+    }
+
+    public function getPayload($key)
     {
         return $this->payload;
     }

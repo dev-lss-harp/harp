@@ -18,6 +18,10 @@ class Utils
                     preg_match('`--(type)=(.*)`',$args[$k],$matches)
                     ||
                     preg_match('`--(short)=(.*)`',$args[$k],$matches)
+                    ||
+                    preg_match('`--(app)=(.*)`',$args[$k],$matches)
+                    ||
+                    preg_match('`--(name)=(.*)`',$args[$k],$matches)
                 )
             {
                 $extraArgs[$matches[1]] = trim($matches[2]);

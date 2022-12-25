@@ -131,11 +131,13 @@ class Db
     {
         if(empty($args[1]) || empty($args[2]))
         {
-            Show::showMessage(sprintf(Show::getMessage(1000),'Missed argument {--app}!'));
+            Show::showMessage(sprintf(Show::getMessage(1000),'Invalid command to migrate!'));
         }
 
-        $countArgs = count($args);
+     //   $countArgs = count($args);
 
+        $extraArgs = Utils::parseExtraArguments($args);
+       /* dd($extraArgs);
         $mApp = [];
         $app = null;
 
@@ -163,12 +165,15 @@ class Db
             {
                 $conn = trim($mConn[1]);
             }               
-        }
+        }*/
 
-        if(empty($app))
+        
+        if(empty($extraArgs['app']))
         {
             Show::showMessage(sprintf(Show::getMessage(1000),'Missed argument {--app}!'));
         }
+
+        $extraArgs['conn'] = empty($extraArgs['conn']) ? 'default' : $extraArgs['conn'];
 
         $path = sprintf
         (
@@ -176,7 +181,7 @@ class Db
             DIRECTORY_SEPARATOR,
             'app',
             DIRECTORY_SEPARATOR,
-            $app,
+            $extraArgs['app'],
             DIRECTORY_SEPARATOR,
             'storage',
             DIRECTORY_SEPARATOR,
@@ -203,14 +208,14 @@ class Db
 
         $migrate = new Migrate();
 
-        if(!empty($name))
+        if(!empty($extraArgs['name']))
         {
-            $mtd = sprintf('get%s',$name);
+            $mtd = sprintf('get%s',$extraArgs['name']);
 
             if(\method_exists($migrate,$mtd))
             {
                 $ClsMtd = $migrate->{$mtd}();
-                $ClsMtd->up($conn);
+                $ClsMtd->up($extraArgs['conn']);
             }
         }
         else
@@ -224,7 +229,7 @@ class Db
                 if(\method_exists($migrate,$mtd))
                 {
                     $ClsMtd = $migrate->{$mtd}();
-                    $ClsMtd->up($conn);
+                    $ClsMtd->up($extraArgs['conn']);
                 }
     
             }

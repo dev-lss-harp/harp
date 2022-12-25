@@ -26,7 +26,7 @@ class Show
         "\033[36m [model del]         ".PHP_EOL."\033[0m \033[91m del::model \033[92m{modelName} \033[0m".PHP_EOL,
         "\033[36m [view del]          ".PHP_EOL."\033[0m \033[91m del::view \033[92m{viewName} \033[0m".PHP_EOL,
         "\033[36m [migration build]   ".PHP_EOL."\033[0m \033[91m db::create_migration \033[92m--app={appName} --name={migrationName} --(table|create)={tableName} \033[093m\r\n--order=number --columns={column_name_1,column_name_2...}\033[0m\033[0m".PHP_EOL,
-        "\033[36m [migration exec]   ".PHP_EOL."\033[0m \033[91m db::migrate \033[92m--app={appName}  \033[".PHP_EOL,
+        "\033[36m [migration exec]   ".PHP_EOL."\033[0m \033[91m db::migrate \033[92m--app={appName}  \033[ \033[093m --nameFileMigrationWithoutExtension --conn=connection\033".PHP_EOL,
         "\033[36m [entity db build]    ".PHP_EOL."\033[0m \033[91m db::entity \033[92m{app}/{module}/{entityName} \033[093m--table={nameTable} \033[0m\033[0m".PHP_EOL,
         "\033[36m [entity build|db]       ".PHP_EOL."\033[0m \033[91m build::entity \033[92m{app}/{module}/{entityName} \033[093m--table={nameTable} \033[0m\033[0m".PHP_EOL,
         "\033[36m [repository build]    ".PHP_EOL."\033[0m \033[91m build::repository \033[92m{app}/{module}/{repositoryName} \033[".PHP_EOL,
