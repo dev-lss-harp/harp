@@ -55,12 +55,17 @@ class MultiValidator
     {
 
         $err = false;
+        
+        $multipleProperty = explode('|',$property);
 
-        if(!array_key_exists($property,$data))
+        foreach($multipleProperty as $prop)
         {
-            throw new \Exception(sprintf('property {%s} does not exists in data!',$property),404);
+            if(!array_key_exists($prop,$data))
+            {
+                throw new \Exception(sprintf('property {%s} does not exists in data!',$prop),404);
+            }
         }
-
+     
         $args = explode('=>',$rule);
         $fnArgs = explode('|',$args[0]);
         $method = trim($fnArgs[0]);
@@ -70,9 +75,16 @@ class MultiValidator
             throw new \Exception(sprintf('{%s} validation is not supported!',$method),400);
         }
 
-        $value = $data[$property];
-        $fnArgs[0] = $value;
-        
+
+        $t = 0;
+        $value = '';
+        foreach($multipleProperty as $prop)
+        {
+            $value = sprintf('%s,%s',$value,$data[$prop]);
+            $fnArgs[$t] = $data[$prop];
+            ++$t;
+        }
+     
         foreach($fnArgs as $k => $v)
         {
             if(is_scalar($v))
@@ -110,7 +122,6 @@ class MultiValidator
 
     private function execRules(Array $data,Array $rules)
     {
-
         if(empty($rules))
         {
             throw new \Exception('Validation rules were not informed',404);
@@ -118,6 +129,7 @@ class MultiValidator
 
         foreach($rules as $property => $rule)
         {
+        
             $foundError = false;
             if(is_array($rule))
             {
@@ -147,6 +159,7 @@ class MultiValidator
 
     public function addRule(string $key,Array $rule)
     {
+
         if(!array_key_exists($key,$this->rules))
         {
             $this->rules[$key] = $rule;
@@ -161,7 +174,7 @@ class MultiValidator
         {
             throw new Exception('It is necessary to inform the data and rules to validate!');
         }
-        
+
         $this->execRules($this->data,$this->rules);
     }
 

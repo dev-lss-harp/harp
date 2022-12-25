@@ -10,7 +10,14 @@ class Validator
         $status = preg_match($expr,$email);
         
         return $status;
-    }      
+    }  
+    
+    public function isCellphone($value)
+    {
+        $expr = '`^(\+|\(|\()(\+?[0-9]{2,3})?\(?[0-9]{2}\).*[0-9]{4,5}\-?[0-9]{4,5}`is';
+        
+        return preg_match($expr,$value);
+    }   
           
     public static function isEmpty($value)
     {
@@ -249,6 +256,16 @@ class Validator
         $s = $cpf[10] == ($r < 2 ? 0 : 11 - $r);
         
         return $s;
+    }
+
+    public static function isEquals($v1,$v2)
+    {
+        return $v1 === $v2;
+    }
+
+    public static function validateByRegex($value,$regex)
+    {
+        return preg_match('`'.$regex.'`is',(string) $value);
     }
 }
 
