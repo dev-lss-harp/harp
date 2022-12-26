@@ -30,6 +30,7 @@
         "symfony/cache": ">=5.4",
         "symfony/dotenv": ">=5.4",
         "symfony/var-dumper": ">=5.4",
-        "strobotti/php-jwk": ">=1.3.0"
+        "strobotti/php-jwk": ">=1.3.0",
+        "symfony/mailer": ">=6.2.0"
     }
 }
