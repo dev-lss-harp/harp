@@ -50,33 +50,6 @@ class MultiValidator
         return $this;
     }
 
-    private function validateByArray($data,$property,$rule)
-    {
-        $foundError = false;
-
-        foreach($data as $k => $dt)
-        {
-            if(empty($dt))
-            {
-                throw new Exception(sprintf('There are no properties for data validation in array {%s}!',$k),400);
-            }
-
-            foreach($dt as $key => $val)
-            {
-                $foundError =  $this->validate($data,$k,$rule,$dt,$key);
-                
-                if($foundError)
-                {
-                    break;
-                }
-            }
-
-        }
-     
-        return $foundError;
-
-    }
-
     private function parseMultiProperty($property,$data)
     {
         $multipleProperty = explode('|',$property);
@@ -93,19 +66,12 @@ class MultiValidator
     }
     
 
-    private function validate($data,$property,$rule,$newData = [],$newProperty = null)
+    private function validate($data,$property,$rule)
     {
 
         $err = false;
 
         $multipleProperty = $this->parseMultiProperty($property,$data);
-
-        if(!empty($newData) && !empty($newProperty))
-        {
-            $data = $newData;
-            $property = $newProperty;
-            $multipleProperty = $this->parseMultiProperty($property,$data);
-        }
         
         $args = explode('=>',$rule);
         $fnArgs = explode('|',$args[0]);
@@ -115,7 +81,6 @@ class MultiValidator
         {
             throw new \Exception(sprintf('{%s} validation is not supported!',$method),400);
         }
-
 
         $t = 0;
         $value = '';
@@ -154,7 +119,7 @@ class MultiValidator
             //%1 = argument extra 1
             //%2 = argument extra 2
             //%3 = argument extra 3
-            $this->errors[$method] = !empty($args[1]) ? str_ireplace(['%p','%v','%m','%1','%2','%3'],[$property,$value,...$fnArgs],$args[1]) : $this->defaultErrors[$method];
+            $this->errors[$method] = !empty($args[1]) ? str_ireplace(['%p','%v','%m','%1','%2','%3'],[$property,$value,...$fnArgs],trim($args[1])) : $this->defaultErrors[$method];
 
             $err = true;
         }
@@ -163,37 +128,39 @@ class MultiValidator
  
     }
 
-    private function execRulesArray(Array $data,Array $rules)
+    private function fnValidateCall($data,$property,$r)
     {
-        if(empty($rules))
+        if(!array_key_exists($property,$data))
         {
-            throw new \Exception('Validation rules were not informed',404);
+            throw new Exception(sprintf('Property {%s} does not exists in data!',$property),400);
+        }
+        else if(is_array($data[$property]) && empty($data[$property]))
+        {
+            throw new Exception(sprintf('There are no properties for data validation in array {%s}!',$property),400);
         }
 
-        foreach($rules as $property => $rule)
+        if(!is_array($data[$property]))
         {
-        
-            $foundError = false;
-            if(is_array($rule))
+            $foundError = $this->validate($data,$property,$r);
+
+            if($foundError)
             {
-                foreach($rule as $r)
-                {
-                    $foundError = $this->validateByArray($data,$property,$r);
-                    if($foundError)
-                    {
-                        break;
-                    }
-                }
+                return $foundError;
             }
-            else
+        }
+        else
+        {
+            foreach($data[$property] as $p => $val)
             {
-                $foundError = $this->validateByArray($data,$property,$rule);
+                $foundError = $this->validate($data[$property],$p,$r);
                 if($foundError)
                 {
                     break;
                 }
             }
         }
+
+        return $foundError;
     }
 
     private function execRules(Array $data,Array $rules)
@@ -211,20 +178,15 @@ class MultiValidator
             {
                 foreach($rule as $r)
                 {
-                    $foundError = $this->validate($data,$property,$r);
-                    if($foundError)
-                    {
-                        break;
-                    }
+                    $foundError = $this->fnValidateCall($data,$property,$r);
+
+                    if($foundError){ break 2; }
                 }
             }
             else
             {
-                $foundError = $this->validate($data,$property,$rule);
-                if($foundError)
-                {
-                    break;
-                }
+                $foundError = $this->fnValidateCall($data,$property,$rule);
+                if($foundError){ break; }
             }
         }
     }
@@ -247,7 +209,7 @@ class MultiValidator
         return $this;
     }
 
-    public function exec($scalar = true)
+    public function exec()
     {
         if(empty($this->data))
         {
@@ -258,16 +220,8 @@ class MultiValidator
             throw new Exception('validation rules not given!');
         }
 
-        if($scalar)
-        {
-            $this->execRules($this->data,$this->rules);
-        }
-        else
-        {
-            $this->execRulesArray($this->data,$this->rules);
-        }
-
-       
+        $this->execRules($this->data,$this->rules);
+        
     }
 
     public function hasError()
