@@ -49,13 +49,36 @@ class MultiValidator
 
         return $this;
     }
-    
 
-    private function validate($data,$property,$rule)
+    private function validateByArray($data,$property,$rule)
     {
+        $foundError = false;
 
-        $err = false;
-        
+        foreach($data as $k => $dt)
+        {
+            if(empty($dt))
+            {
+                throw new Exception(sprintf('There are no properties for data validation in array {%s}!',$k),400);
+            }
+
+            foreach($dt as $key => $val)
+            {
+                $foundError =  $this->validate($data,$k,$rule,$dt,$key);
+                
+                if($foundError)
+                {
+                    break;
+                }
+            }
+
+        }
+     
+        return $foundError;
+
+    }
+
+    private function parseMultiProperty($property,$data)
+    {
         $multipleProperty = explode('|',$property);
 
         foreach($multipleProperty as $prop)
@@ -65,7 +88,25 @@ class MultiValidator
                 throw new \Exception(sprintf('property {%s} does not exists in data!',$prop),404);
             }
         }
-     
+
+        return $multipleProperty;
+    }
+    
+
+    private function validate($data,$property,$rule,$newData = [],$newProperty = null)
+    {
+
+        $err = false;
+
+        $multipleProperty = $this->parseMultiProperty($property,$data);
+
+        if(!empty($newData) && !empty($newProperty))
+        {
+            $data = $newData;
+            $property = $newProperty;
+            $multipleProperty = $this->parseMultiProperty($property,$data);
+        }
+        
         $args = explode('=>',$rule);
         $fnArgs = explode('|',$args[0]);
         $method = trim($fnArgs[0]);
@@ -78,13 +119,14 @@ class MultiValidator
 
         $t = 0;
         $value = '';
+        
         foreach($multipleProperty as $prop)
         {
-            $value = sprintf('%s,%s',$value,$data[$prop]);
             $fnArgs[$t] = $data[$prop];
+            $value = empty($value) ? $data[$prop] : sprintf('%s,%s',$value,$data[$prop]);
             ++$t;
         }
-     
+
         foreach($fnArgs as $k => $v)
         {
             if(is_scalar($v))
@@ -118,6 +160,40 @@ class MultiValidator
         }
 
         return $err;
+ 
+    }
+
+    private function execRulesArray(Array $data,Array $rules)
+    {
+        if(empty($rules))
+        {
+            throw new \Exception('Validation rules were not informed',404);
+        }
+
+        foreach($rules as $property => $rule)
+        {
+        
+            $foundError = false;
+            if(is_array($rule))
+            {
+                foreach($rule as $r)
+                {
+                    $foundError = $this->validateByArray($data,$property,$r);
+                    if($foundError)
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                $foundError = $this->validateByArray($data,$property,$rule);
+                if($foundError)
+                {
+                    break;
+                }
+            }
+        }
     }
 
     private function execRules(Array $data,Array $rules)
@@ -136,16 +212,19 @@ class MultiValidator
                 foreach($rule as $r)
                 {
                     $foundError = $this->validate($data,$property,$r);
+                    if($foundError)
+                    {
+                        break;
+                    }
                 }
             }
             else
             {
                 $foundError = $this->validate($data,$property,$rule);
-            }
-
-            if($foundError)
-            {
-                break;
+                if($foundError)
+                {
+                    break;
+                }
             }
         }
     }
@@ -168,14 +247,27 @@ class MultiValidator
         return $this;
     }
 
-    public function exec()
+    public function exec($scalar = true)
     {
-        if(empty($this->data) || empty($this->rules))
+        if(empty($this->data))
         {
-            throw new Exception('It is necessary to inform the data and rules to validate!');
+            throw new Exception('Validation data is empty!');
+        }
+        else  if(empty($this->rules))
+        {
+            throw new Exception('validation rules not given!');
         }
 
-        $this->execRules($this->data,$this->rules);
+        if($scalar)
+        {
+            $this->execRules($this->data,$this->rules);
+        }
+        else
+        {
+            $this->execRulesArray($this->data,$this->rules);
+        }
+
+       
     }
 
     public function hasError()
