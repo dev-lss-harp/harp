@@ -1285,28 +1285,17 @@ class Build
     {
         if(empty($args[2]))
         {
-            Show::showMessage(sprintf(Show::getMessage(1001),'Create a api required parameter --args!'));
+            Show::showMessage(sprintf(Show::getMessage(1001),'Invalid command to create api!'));
         }
 
-        $re = '`--args=(.*)?`si';
-
-        preg_match($re,$args[2],$matches);  
-     
-        if(empty($matches[1]))
-        {
-            Show::showMessage(sprintf(Show::getMessage(1001),'Invalid parameter --args!'));
-        }
-
-        $listArgs = [];
-
-        $matches[1] = str_ireplace("\\","/",$matches[1]);
-        $listArgs = explode('/',$matches[1]);
+        $args[2] = str_ireplace("\\","/",$args[2]);
+        $listArgs = explode('/',$args[2]);
 
         $countArgs = count($listArgs);
 
-        if($countArgs != 3)
+        if($countArgs < 3)
         {
-            Show::showMessage(sprintf(Show::getMessage(1001),'parameter --args required 3 arguments!'));
+            Show::showMessage(sprintf(Show::getMessage(1001),'the minimum number of arguments for path is 3 in the format: {app}/{module}/{controller} the fourth argument is optional and is equivalent to the name of the method.!'));
         }
 
         $listArgs = array_values($listArgs);
@@ -1332,6 +1321,8 @@ class Build
             }
         }
 
+        $listArgs[3] = !empty($listArgs[3]) ? $listArgs[3] : 'index';
+
         $strCode  = '$Route = HarpRoute::load(false)'.PHP_EOL;    
         $strCode .= $strApps;
         $strCode .= str_repeat(chr(32),7).'->runApp();'.PHP_EOL;
@@ -1343,7 +1334,7 @@ class Build
         $routes = json_decode(file_get_contents($paths->routes.DIRECTORY_SEPARATOR.'routes.json'),true);
         $routes['apps'][$name] = [
             $nameLower => [
-                "path" => sprintf("%s/%s/%s/%s",$nameLower,$listArgs[1],$listArgs[2],'index'),
+                "path" => sprintf("%s/%s/%s/%s",$nameLower,$listArgs[1],$listArgs[2],$listArgs[3]),
                 "condition" => "=== true",
                 "constructor" => [],        
                 "args" => [],
@@ -1382,14 +1373,14 @@ class Build
         self::controller([
             'play-h',
             'build::controller',
-            sprintf("%s/%s/%s",$nameLower,$listArgs[1],$listArgs[2]),
+            sprintf("%s/%s/%s/%s",$nameLower,$listArgs[1],$listArgs[2],$listArgs[3]),
             '--api=true'
         ],true);
 
         self::model([
             'play-h',
             'build::model',
-            sprintf("%s/%s/%s",$nameLower,$listArgs[1],$listArgs[2])
+            sprintf("%s/%s/%s/%s",$nameLower,$listArgs[1],$listArgs[2],$listArgs[3])
         ],true);
 
         //Create keys folder
