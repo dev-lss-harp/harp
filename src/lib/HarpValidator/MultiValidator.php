@@ -68,7 +68,6 @@ class MultiValidator
 
     private function validate($data,$property,$rule)
     {
-
         $err = false;
 
         $multipleProperty = $this->parseMultiProperty($property,$data);
@@ -130,11 +129,10 @@ class MultiValidator
 
     private function fnValidateCall($data,$property,$r)
     {
-        if(!array_key_exists($property,$data))
-        {
-            throw new Exception(sprintf('Property {%s} does not exists in data!',$property),400);
-        }
-        else if(is_array($data[$property]) && empty($data[$property]))
+        $this->parseMultiProperty($property,$data);
+
+
+        if(is_array($data[$property]) && empty($data[$property]))
         {
             throw new Exception(sprintf('There are no properties for data validation in array {%s}!',$property),400);
         }
