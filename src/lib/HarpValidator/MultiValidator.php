@@ -2,13 +2,14 @@
 namespace Harp\lib\HarpValidator;
 
 use Exception;
+use Throwable;
 
 class MultiValidator
 {
     private $data = [];
     private $rules = [];
-    private $Validator;
     private $errors = [];
+    private $validator;
     private $defaultErrors = [
         'isEmail' => 'E-mail {%s} is invalid!',
         'isEmpty' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
@@ -35,7 +36,7 @@ class MultiValidator
         'isCpf' => 'Parameter {%s} with value {%s} is invalid for validator {%s}!',
     ];
 
-    public function __construct(Array $data = [],Array $rules = [])
+    public function __construct(Array &$data = [],Array $rules = [])
     {
         $this->data = $data;
         $this->rules = $rules;
@@ -50,143 +51,152 @@ class MultiValidator
         return $this;
     }
 
-    private function parseMultiProperty($property,$data)
-    {
-        $multipleProperty = explode('|',$property);
-
-        foreach($multipleProperty as $prop)
-        {
-            if(!array_key_exists($prop,$data))
-            {
-                throw new \Exception(sprintf('property {%s} does not exists in data!',$prop),404);
-            }
-        }
-
-        return $multipleProperty;
-    }
-    
-
-    private function validate($data,$property,$rule)
+    private function validate($strParam,$method,$property,$value,$extraParams = [])
     {
         $err = false;
-
-        $multipleProperty = $this->parseMultiProperty($property,$data);
         
-        $args = explode('=>',$rule);
-        $fnArgs = explode('|',$args[0]);
-        $method = trim($fnArgs[0]);
-
-        if(!method_exists($this->validator,$method))
+        try 
         {
-            throw new \Exception(sprintf('{%s} validation is not supported!',$method),400);
-        }
+            $p = explode("=>",$strParam);
+            $fn = trim($p[0]);
+            $msg = trim($p[1]);
 
-        $t = 0;
-        $value = '';
-        
-        foreach($multipleProperty as $prop)
-        {
-            $fnArgs[$t] = $data[$prop];
-            $value = empty($value) ? $data[$prop] : sprintf('%s,%s',$value,$data[$prop]);
-            ++$t;
-        }
+            $result = false;
+  
+            eval($fn.";");
 
-        foreach($fnArgs as $k => $v)
-        {
-            if(is_scalar($v))
+            if(!$result)
             {
-                $fnArgs[$k] = is_string($v) ? trim($v) : $v;
-            }
-            else if(is_object($v) || is_array($v))
-            {
-                foreach($v as $k2 => $v2)
+                $this->errors[$method] = $this->defaultErrors[$method];
+
+                //%p = property
+                //%v = value
+                //%m = method
+                //%1 = argument extra 1
+                //%2 = argument extra 2
+                //%3 = argument extra 3
+
+                if(!empty($msg))
                 {
-                    $fnArgs[$k] = is_string($v2) ? trim($v2) : $v2;
+                    $this->errors[$method] = 
+                    str_ireplace(
+                        ['%p','%v','%m','%1','%2','%3'],
+                        [$property,$value,$method,...$extraParams],
+                        $msg
+                    );
                 }
+
+                $err = true;
             }
-            
-        }
-
-        $Reflection = new \ReflectionMethod($this->validator, $method);
-        $result = $Reflection->invokeArgs($this->validator,$fnArgs);
-
-        if(!$result)
+ 
+        } 
+        catch (Throwable $th) 
         {
-            //%p = property
-            //%v = value
-            //%m = method
-            //%1 = argument extra 1
-            //%2 = argument extra 2
-            //%3 = argument extra 3
-            $this->errors[$method] = !empty($args[1]) ? str_ireplace(['%p','%v','%m','%1','%2','%3'],[$property,$value,...$fnArgs],trim($args[1])) : $this->defaultErrors[$method];
-
-            $err = true;
+            throw $th;
         }
 
         return $err;
- 
     }
 
-    private function fnValidateCall($data,$property,$r)
-    {
-        $this->parseMultiProperty($property,$data);
-
-
-        if(is_array($data[$property]) && empty($data[$property]))
-        {
-            throw new Exception(sprintf('There are no properties for data validation in array {%s}!',$property),400);
-        }
-
-        if(!is_array($data[$property]))
-        {
-            $foundError = $this->validate($data,$property,$r);
-
-            if($foundError)
-            {
-                return $foundError;
-            }
-        }
-        else
-        {
-            foreach($data[$property] as $p => $val)
-            {
-                $foundError = $this->validate($data[$property],$p,$r);
-                if($foundError)
-                {
-                    break;
-                }
-            }
-        }
-
-        return $foundError;
-    }
-
-    private function execRules(Array $data,Array $rules)
+    private function execRules(Array &$data,Array $rules)
     {
         if(empty($rules))
         {
             throw new \Exception('Validation rules were not informed',404);
         }
 
-        foreach($rules as $property => $rule)
+        foreach($rules as $key => $rule)
         {
-        
-            $foundError = false;
-            if(is_array($rule))
-            {
-                foreach($rule as $r)
-                {
-                    $foundError = $this->fnValidateCall($data,$property,$r);
+            $tk = str_contains($key,'.') ? '.' : (str_contains($key,'|') ? '|' : ''); 
+            $kp = str_contains($key,'.') ? explode('.',$key) : explode('|',$key);
 
-                    if($foundError){ break 2; }
-                }
-            }
-            else
+            if($tk == '.' && (!array_key_exists($kp[0],$data) || !array_key_exists($kp[1],$data[$kp[0]])) )
             {
-                $foundError = $this->fnValidateCall($data,$property,$rule);
-                if($foundError){ break; }
+                throw new Exception(sprintf('There property {%s} does not exists in data!',$key),400);
+            }
+            else if($tk == '|' && (!array_key_exists($kp[0],$data) || !array_key_exists($kp[1],$data)))
+            {
+                throw new Exception(sprintf('There properties {%s} or {%s} does not exists in data!',$kp[0],$kp[1]),400);
+            }
+
+            $rulesEnabled = ['isEquals'];
+
+            foreach($rule as $r)
+            {
+                $mRule = explode('=>',$r);
+                $pRule = explode('|',$mRule[0]);
+
+                $m = trim($pRule[0]);
+                $msg = trim($mRule[1]);
+
+                $staticParams = '';
+                $countP = count($pRule) - 1;
+                if($countP > 0)
+                {
+                    for($i = 1; $i <= $countP;++$i)
+                    {
+                        $val = trim($pRule[$i]);
+                  
+                        $staticParams .= $i != $countP ? sprintf('"%s",',$val) : sprintf('"%s"',$val); 
+                    }
+                   
+                }
+
+                $vParams = '';
+                $kParams = '';
+      
+                if($tk == '|' && in_array($m,$rulesEnabled))
+                {
+                    $data[$kp[0]] = Sanitizer::filterSanitizeString($data[$kp[0]]);
+                    $data[$kp[1]] = Sanitizer::filterSanitizeString($data[$kp[1]]);
+                    $vParams = sprintf('%s,%s',$data[$kp[0]],$data[$kp[1]]);
+                    $kParams = sprintf('%s,%s',$kp[0],$kp[1]);
+
+                    $overWriteRule = sprintf('$result = $this->validator->%s("%s","%s"%s) => %s',$m,$data[$kp[0]],$data[$kp[1]],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg); 
+                }
+                else if($tk == '.')
+                {
+                    $data[$kp[0]][$kp[1]] = Sanitizer::filterSanitizeString($data[$kp[0]][$kp[1]]);
+                    $vParams = sprintf('%s',$data[$kp[0]][$kp[1]]);
+                    $kParams = sprintf('%s.%s',$kp[0],$kp[1]);
+                    $overWriteRule = sprintf('$result = $this->validator->%s("%s"%s) => %s',$m,$data[$kp[0]][$kp[1]],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg);
+                }
+                else
+                {
+                    if(is_array($data[$kp[0]]))
+                    {
+                        if(count($data[$kp[0]]) < 1)
+                        {
+                            throw new Exception(sprintf('There property {%s} is a empty collection!',$kp[0]),400);
+                        }
+
+                        foreach($data[$kp[0]] as $k => $v)
+                        {
+                            $data[$kp[0]][$k] = Sanitizer::filterSanitizeString($v);
+                            $vParams = sprintf('%s',$data[$kp[0]][$k]);
+                            $kParams = sprintf('%s',$k);
+                            $overWriteRule = sprintf('$result = $this->validator->%s("%s"%s) => %s',$m,$v,(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg);
+                            $foundError = $this->validate($overWriteRule,$m,$kParams,$vParams);
+                            if($foundError) { break 2;}
+                        }
+                    }
+                    else
+                    {
+                        $data[$kp[0]] = Sanitizer::filterSanitizeString($data[$kp[0]]);
+                        $vParams = sprintf('%s',$data[$kp[0]]);
+                        $kParams = sprintf('%s',$kp[0]);
+                        $overWriteRule = sprintf('$result = $this->validator->%s("%s"%s) => %s',$m,$data[$kp[0]],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg);
+                    }
+
+                }
+                
+                $foundError = $this->validate($overWriteRule,$m,$kParams,$vParams);
+                
+                if($foundError){ break 2; }
             }
         }
+
+        return $foundError;
     }
 
     public function setData(Array $data)
@@ -207,7 +217,7 @@ class MultiValidator
         return $this;
     }
 
-    public function exec()
+    public function exec($throwWithErrors = true)
     {
         if(empty($this->data))
         {
@@ -219,6 +229,15 @@ class MultiValidator
         }
 
         $this->execRules($this->data,$this->rules);
+
+        if($throwWithErrors)
+        {
+            if($this->hasError())
+            {
+                throw new Exception($this->toString(),400);
+            }
+        }
+        
         
     }
 

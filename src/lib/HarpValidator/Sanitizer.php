@@ -94,7 +94,7 @@ class Sanitizer
     {
         $onlyNumber = preg_replace('#[^0-9]#i','',$str);
         
-        return (int) $onlyNumber;
+        return $onlyNumber;
     }
     
     public static function replaceAccentsString($str)
