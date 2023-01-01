@@ -98,6 +98,32 @@ class MultiValidator
         return $err;
     }
 
+    private function getValue($value)
+    {
+        $type = gettype($value);
+
+        switch($type)
+        {
+            case 'boolean':
+                    return $value ? 'true' : 'false';
+            break;
+            case 'string':
+                    return sprintf('%s%s%s',"'",Sanitizer::filterSanitizeString($value),"'");
+            break;
+            case 'integer':
+            case 'double':    
+                    return $value;
+            break;
+            case 'NULL':
+                    return '';
+            break;
+            default:
+                throw new Exception(sprintf('The data type {%s} is invalid to validate!',$type),400);
+
+        }
+      
+    }
+
     private function execRules(Array &$data,Array $rules)
     {
         if(empty($rules))
@@ -105,8 +131,12 @@ class MultiValidator
             throw new \Exception('Validation rules were not informed',404);
         }
 
+           
+    
         foreach($rules as $key => $rule)
         {
+
+
             $tk = str_contains($key,'.') ? '.' : (str_contains($key,'|') ? '|' : ''); 
             $kp = str_contains($key,'.') ? explode('.',$key) : explode('|',$key);
 
@@ -118,7 +148,7 @@ class MultiValidator
             {
                 throw new Exception(sprintf('There properties {%s} or {%s} does not exists in data!',$kp[0],$kp[1]),400);
             }
-
+     
             $rulesEnabled = ['isEquals'];
 
             foreach($rule as $r)
@@ -141,28 +171,31 @@ class MultiValidator
                     }
                    
                 }
-
+    
                 $vParams = '';
                 $kParams = '';
       
                 if($tk == '|' && in_array($m,$rulesEnabled))
                 {
-                    $data[$kp[0]] = Sanitizer::filterSanitizeString($data[$kp[0]]);
-                    $data[$kp[1]] = Sanitizer::filterSanitizeString($data[$kp[1]]);
+                    $data[$kp[0]] = $this->getValue($data[$kp[0]]);
+                    $data[$kp[1]] = $this->getValue($data[$kp[1]]);
+                    $type = gettype($data[$kp[1]]);
                     $vParams = sprintf('%s,%s',$data[$kp[0]],$data[$kp[1]]);
                     $kParams = sprintf('%s,%s',$kp[0],$kp[1]);
 
-                    $overWriteRule = sprintf('$result = $this->validator->%s("%s","%s"%s) => %s',$m,$data[$kp[0]],$data[$kp[1]],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg); 
+                    $overWriteRule = sprintf('$result = $this->validator->%s(%s,%s%s) => %s',$m,$data[$kp[0]],$data[$kp[1]],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg); 
                 }
                 else if($tk == '.')
                 {
-                    $data[$kp[0]][$kp[1]] = Sanitizer::filterSanitizeString($data[$kp[0]][$kp[1]]);
+                    $data[$kp[0]][$kp[1]] = $this->getValue($data[$kp[0]][$kp[1]]);
                     $vParams = sprintf('%s',$data[$kp[0]][$kp[1]]);
                     $kParams = sprintf('%s.%s',$kp[0],$kp[1]);
-                    $overWriteRule = sprintf('$result = $this->validator->%s("%s"%s) => %s',$m,$data[$kp[0]][$kp[1]],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg);
+                    $type = gettype($data[$kp[0]][$kp[1]]);
+                    $overWriteRule = sprintf('$result = $this->validator->%s(%s%s) => %s',$m,$data[$kp[0]][$kp[1]],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg);
                 }
                 else
                 {
+
                     if(is_array($data[$kp[0]]))
                     {
                         if(count($data[$kp[0]]) < 1)
@@ -172,20 +205,24 @@ class MultiValidator
 
                         foreach($data[$kp[0]] as $k => $v)
                         {
-                            $data[$kp[0]][$k] = Sanitizer::filterSanitizeString($v);
+                            $data[$kp[0]][$k] = $this->getValue($data[$kp[0]][$k]);
                             $vParams = sprintf('%s',$data[$kp[0]][$k]);
                             $kParams = sprintf('%s',$k);
-                            $overWriteRule = sprintf('$result = $this->validator->%s("%s"%s) => %s',$m,$v,(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg);
+                            $overWriteRule = sprintf('$result = $this->validator->%s(%s%s) => %s',$m,$data[$kp[0]][$k],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg);
                             $foundError = $this->validate($overWriteRule,$m,$kParams,$vParams);
                             if($foundError) { break 2;}
                         }
                     }
                     else
                     {
-                        $data[$kp[0]] = Sanitizer::filterSanitizeString($data[$kp[0]]);
+                  
+                        $data[$kp[0]] = $this->getValue($data[$kp[0]]);
+                
                         $vParams = sprintf('%s',$data[$kp[0]]);
                         $kParams = sprintf('%s',$kp[0]);
-                        $overWriteRule = sprintf('$result = $this->validator->%s("%s"%s) => %s',$m,$data[$kp[0]],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg);
+
+                        $overWriteRule = sprintf('$result = $this->validator->%s(%s%s) => %s',$m,$data[$kp[0]],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg);
+
                     }
 
                 }
@@ -236,9 +273,7 @@ class MultiValidator
             {
                 throw new Exception($this->toString(),400);
             }
-        }
-        
-        
+        } 
     }
 
     public function hasError()
@@ -266,5 +301,3 @@ class MultiValidator
         }
     }
 }
-
-
