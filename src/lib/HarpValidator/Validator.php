@@ -100,7 +100,7 @@ class Validator
         return $status;        
     }
     
-    public static function isZipCode($value,$format = '[0-9]{5}-[0-9]{3}')
+    public static function isZipCode($value,$format = '[0-9]*[\.]?[0-9]{3}[\-]?[0-9]{3}')
     {
         $s = false;
 

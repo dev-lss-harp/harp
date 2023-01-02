@@ -5,12 +5,26 @@ use Exception;
 
 class Sanitizer
 {
-    public static function filterSanitizeString(string $string): string
+    public static function filterSanitizeString(string $string,bool $addslashes = true): string
     {
-        $str = preg_replace('/\x00|<[^>]*>?/','', $string);
-        $str = trim(addslashes($str));
+        $str = trim(trim($string,'",\''));
+        $str = preg_replace('/\x00|<[^>]*>?/','',$str);
+        $str = $addslashes ? filter_var($str,\FILTER_SANITIZE_ADD_SLASHES) : $str;
+        $str = strval($str);
         return $str;
     }
+
+    public static function sanitizeExtraQuotes(string $string): string
+    {
+        $string = trim($string,'",\'');
+        return $string;
+    } 
+
+    public static function addslashes(string $string): string
+    {
+        $string = filter_var($string,\FILTER_SANITIZE_ADD_SLASHES);
+        return $string;
+    } 
 
     public static function &email(&$email)
     {

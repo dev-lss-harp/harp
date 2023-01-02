@@ -95,7 +95,7 @@ class HarpHttpMessage
         {
             $body[$k] = is_array($v) ? 
                         $this->sanitizeDefault($v) : 
-                        (is_string($v) ? filter_var($v,\FILTER_SANITIZE_ADD_SLASHES) : $v);
+                        (is_string($v) ? trim($v) : $v);
         }
 
         return $body;

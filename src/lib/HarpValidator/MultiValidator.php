@@ -2,6 +2,7 @@
 namespace Harp\lib\HarpValidator;
 
 use Exception;
+use ReflectionMethod;
 use Throwable;
 
 class MultiValidator
@@ -51,23 +52,20 @@ class MultiValidator
         return $this;
     }
 
-    private function validate($strParam,$method,$property,$value,$extraParams = [])
+    private function validate($execParams)
     {
         $err = false;
-        
+
         try 
         {
-            $p = explode("=>",$strParam);
-            $fn = trim($p[0]);
-            $msg = trim($p[1]);
-
             $result = false;
-  
-            eval($fn.";");
+
+            $Reflection = new ReflectionMethod($this->validator,$execParams['method']);
+            $result = $Reflection->invokeArgs($this->validator,$execParams['parameters']);
 
             if(!$result)
             {
-                $this->errors[$method] = $this->defaultErrors[$method];
+                $this->errors[$execParams['method']] = $this->defaultErrors[$execParams['method']];
 
                 //%p = property
                 //%v = value
@@ -78,10 +76,10 @@ class MultiValidator
 
                 if(!empty($msg))
                 {
-                    $this->errors[$method] = 
+                    $this->errors[$execParams['method']] = 
                     str_ireplace(
                         ['%p','%v','%m','%1','%2','%3'],
-                        [$property,$value,$method,...$extraParams],
+                        [$execParams['p'],$execParams['v'],$execParams['method'],...$execParams['extraArguments']],
                         $msg
                     );
                 }
@@ -98,32 +96,6 @@ class MultiValidator
         return $err;
     }
 
-    private function getValue($value)
-    {
-        $type = gettype($value);
-
-        switch($type)
-        {
-            case 'boolean':
-                    return $value ? 'true' : 'false';
-            break;
-            case 'string':
-                    return sprintf('%s%s%s',"'",Sanitizer::filterSanitizeString($value),"'");
-            break;
-            case 'integer':
-            case 'double':    
-                    return $value;
-            break;
-            case 'NULL':
-                    return '';
-            break;
-            default:
-                throw new Exception(sprintf('The data type {%s} is invalid to validate!',$type),400);
-
-        }
-      
-    }
-
     private function execRules(Array &$data,Array $rules)
     {
         if(empty($rules))
@@ -131,12 +103,8 @@ class MultiValidator
             throw new \Exception('Validation rules were not informed',404);
         }
 
-           
-    
         foreach($rules as $key => $rule)
         {
-
-
             $tk = str_contains($key,'.') ? '.' : (str_contains($key,'|') ? '|' : ''); 
             $kp = str_contains($key,'.') ? explode('.',$key) : explode('|',$key);
 
@@ -149,8 +117,6 @@ class MultiValidator
                 throw new Exception(sprintf('There properties {%s} or {%s} does not exists in data!',$kp[0],$kp[1]),400);
             }
      
-            $rulesEnabled = ['isEquals'];
-
             foreach($rule as $r)
             {
                 $mRule = explode('=>',$r);
@@ -159,45 +125,68 @@ class MultiValidator
                 $m = trim($pRule[0]);
                 $msg = trim($mRule[1]);
 
-                $staticParams = '';
+                $parameters = [];
                 $countP = count($pRule) - 1;
                 if($countP > 0)
                 {
                     for($i = 1; $i <= $countP;++$i)
                     {
                         $val = trim($pRule[$i]);
-                  
-                        $staticParams .= $i != $countP ? sprintf('"%s",',$val) : sprintf('"%s"',$val); 
+                        $parameters[] = $val;
                     }
-                   
                 }
     
+                $extraArguments = array_map('trim',array_slice($pRule,1));
+
                 $vParams = '';
                 $kParams = '';
       
-                if($tk == '|' && in_array($m,$rulesEnabled))
+                if($tk == '|')
                 {
-                    $data[$kp[0]] = $this->getValue($data[$kp[0]]);
-                    $data[$kp[1]] = $this->getValue($data[$kp[1]]);
-                    $type = gettype($data[$kp[1]]);
                     $vParams = sprintf('%s,%s',$data[$kp[0]],$data[$kp[1]]);
                     $kParams = sprintf('%s,%s',$kp[0],$kp[1]);
 
-                    $overWriteRule = sprintf('$result = $this->validator->%s(%s,%s%s) => %s',$m,$data[$kp[0]],$data[$kp[1]],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg); 
+                    //merge parameters
+                    array_unshift($parameters,$data[$kp[0]],$data[$kp[1]]); 
+
+                    $execParams = [
+                        'method' => $m,
+                        'message' => $msg,
+                        'v' => $vParams,
+                        'p' => $kParams,
+                        'extraArguments' => $extraArguments,
+                        'parameters' => $parameters
+                    ];
+
+                    $foundError = $this->validate($execParams);
+                    
+                    if($foundError){ break 2; }
                 }
                 else if($tk == '.')
-                {
-                    $data[$kp[0]][$kp[1]] = $this->getValue($data[$kp[0]][$kp[1]]);
+                {  
                     $vParams = sprintf('%s',$data[$kp[0]][$kp[1]]);
                     $kParams = sprintf('%s.%s',$kp[0],$kp[1]);
-                    $type = gettype($data[$kp[0]][$kp[1]]);
-                    $overWriteRule = sprintf('$result = $this->validator->%s(%s%s) => %s',$m,$data[$kp[0]][$kp[1]],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg);
+
+                    array_unshift($parameters,$data[$kp[0]][$kp[1]]); 
+
+                    $execParams = [
+                        'method' => $m,
+                        'message' => $msg,
+                        'v' => $vParams,
+                        'p' => $kParams,
+                        'extraArguments' => $extraArguments,
+                        'parameters' => $parameters
+                    ];
+
+                    $foundError = $this->validate($execParams);
+                    
+                    if($foundError){ break 2; }
                 }
                 else
                 {
 
                     if(is_array($data[$kp[0]]))
-                    {
+                    { 
                         if(count($data[$kp[0]]) < 1)
                         {
                             throw new Exception(sprintf('There property {%s} is a empty collection!',$kp[0]),400);
@@ -205,31 +194,47 @@ class MultiValidator
 
                         foreach($data[$kp[0]] as $k => $v)
                         {
-                            $data[$kp[0]][$k] = $this->getValue($data[$kp[0]][$k]);
                             $vParams = sprintf('%s',$data[$kp[0]][$k]);
                             $kParams = sprintf('%s',$k);
-                            $overWriteRule = sprintf('$result = $this->validator->%s(%s%s) => %s',$m,$data[$kp[0]][$k],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg);
-                            $foundError = $this->validate($overWriteRule,$m,$kParams,$vParams);
-                            if($foundError) { break 2;}
+
+                            array_unshift($parameters,$data[$kp[0]][$k]); 
+
+                            $execParams = [
+                                'method' => $m,
+                                'message' => $msg,
+                                'v' => $vParams,
+                                'p' => $kParams,
+                                'extraArguments' => $extraArguments,
+                                'parameters' => $parameters
+                            ];
+                            
+                            $foundError = $this->validate($execParams);
+                    
+                            if($foundError) { break 3;}
                         }
                     }
                     else
                     {
-                  
-                        $data[$kp[0]] = $this->getValue($data[$kp[0]]);
-                
                         $vParams = sprintf('%s',$data[$kp[0]]);
                         $kParams = sprintf('%s',$kp[0]);
+                        array_unshift($parameters,$data[$kp[0]]); 
 
-                        $overWriteRule = sprintf('$result = $this->validator->%s(%s%s) => %s',$m,$data[$kp[0]],(mb_strlen($staticParams) != 0 ? sprintf(',%s',$staticParams) : $staticParams),$msg);
+                        $execParams = [
+                            'method' => $m,
+                            'message' => $msg,
+                            'v' => $vParams,
+                            'p' => $kParams,
+                            'extraArguments' => $extraArguments,
+                            'parameters' => $parameters
+                        ];
+                        
+                        $foundError = $this->validate($execParams);
+                
+                        if($foundError){ break 2; }
 
                     }
 
                 }
-                
-                $foundError = $this->validate($overWriteRule,$m,$kParams,$vParams);
-                
-                if($foundError){ break 2; }
             }
         }
 
