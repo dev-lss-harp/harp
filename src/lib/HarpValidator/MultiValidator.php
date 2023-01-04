@@ -74,13 +74,13 @@ class MultiValidator
                 //%2 = argument extra 2
                 //%3 = argument extra 3
 
-                if(!empty($msg))
+                if(!empty($execParams['message']))
                 {
                     $this->errors[$execParams['method']] = 
                     str_ireplace(
                         ['%p','%v','%m','%1','%2','%3'],
                         [$execParams['p'],$execParams['v'],$execParams['method'],...$execParams['extraArguments']],
-                        $msg
+                        $execParams['message']
                     );
                 }
 
