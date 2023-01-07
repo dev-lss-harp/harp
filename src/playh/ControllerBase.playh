@@ -6,13 +6,11 @@
  */
 namespace App\{{appName}}\modules\{{moduleName}}\controller;
 
-use Harp\bin\ArgumentException;
 use Harp\bin\HarpResponse;
-use GuzzleHttp\Psr7\Stream;
-use GuzzleHttp\Utils;
 use Harp\bin\HarpController;
-use Harp\bin\View;
 use App\{{appName}}\modules\{{moduleName}}\model\{{nameController}}Model;
+{{namespace_view}}
+
 
 class {{nameController}}Controller extends HarpController
 {

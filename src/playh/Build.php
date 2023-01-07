@@ -294,6 +294,7 @@ class Build
          $listArgs[3] = preg_replace("/[^A-Za-z0-9]/",'',$listArgs[3]);
 
          $responseReturn = "return (new View('index'));";
+         $nameSpaceReturnView = "use Harp\bin\View;";
 
          if($isApi)
          {
@@ -303,14 +304,16 @@ class Build
                 ['response' => sprintf('Controller Api {%s} is working...','".$controller."')],
                 200
             )->json();";
+
+            $nameSpaceReturnView = '';
          }
 
          $defaultMethod = self::createMethod($listArgs[3],
                                                        $responseReturn
                                             );
          $file = str_ireplace(
-             ['{{appName}}','{{moduleName}}','{{nameController}}','{{attributesConstruct}}','{{defaultMethod}}'],
-             [$listArgs[0],$listArgs[1],$controller,'',$defaultMethod],
+             ['{{appName}}','{{moduleName}}','{{nameController}}','{{attributesConstruct}}','{{defaultMethod}}','{{namespace_view}}'],
+             [$listArgs[0],$listArgs[1],$controller,'',$defaultMethod,$nameSpaceReturnView],
              $fileControllerBase
          );
 

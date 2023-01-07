@@ -1,8 +1,6 @@
 <?php
 namespace App\{{appName}}\modules\{{moduleName}}\model;
 
-use Exception;
-use Harp\bin\ArgumentException;
 use Harp\bin\HarpModel;
 
 class {{nameModel}}Model extends HarpModel
