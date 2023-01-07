@@ -1175,14 +1175,13 @@ class Build
 
     public static function group($args)
     {
-        if(empty($args[2]))
+        $params = Utils::parseCommand($args);
+
+        if(empty($params))
         {
             Show::showMessage(sprintf(Show::getMessage(1001),'Create a group required parameter after build::group!'));
         }
-
-        $params = explode('/',$args[2]);
-
-        if(count($params) < 3)
+        else if(count($params) < 3)
         {
             Show::showMessage(sprintf(Show::getMessage(1001),'The params to create a group required 3 arguments {app}/{module}/{controller}. !'));   
         }
@@ -1201,7 +1200,7 @@ class Build
 
         $pathModule =  sprintf
         (
-            Path::getProjectPath().'%s%s%s%s%s',
+            '%s%s%s%s%s',
              $pathApp,
              DIRECTORY_SEPARATOR,
             'modules',

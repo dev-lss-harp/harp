@@ -2,6 +2,18 @@
 namespace Harp\playh;
 class Utils
 {
+    public static function parseCommand($args)
+    {
+        if(!isset($args[2]))
+        {
+            Show::showMessage(sprintf(Show::getMessage('1000'),'Invalid command!'));
+        }
+
+        $list = explode('/',$args[2]);
+
+        return $list;
+    }
+    
     public static function parseExtraArguments($args)
     {
         $extraArgs = [];
