@@ -116,6 +116,10 @@ class MultiValidator
             {
                 throw new Exception(sprintf('There properties {%s} or {%s} does not exists in data!',$kp[0],$kp[1]),400);
             }
+            else if(empty($tk) && !array_key_exists($kp[0],$data))
+            {
+                throw new Exception(sprintf('There property {%s} does not exists in data!',$kp[0]),400);
+            }
      
             foreach($rule as $r)
             {
@@ -184,7 +188,6 @@ class MultiValidator
                 }
                 else
                 {
-
                     if(is_array($data[$kp[0]]))
                     { 
                         if(count($data[$kp[0]]) < 1)
