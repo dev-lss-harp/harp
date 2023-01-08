@@ -85,6 +85,8 @@ class HarpRepeater
             $this->Template->setProperty($fKey,$file);
         }
 
+        return $this;
+
     }    
     
 }
