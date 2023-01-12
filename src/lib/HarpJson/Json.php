@@ -45,10 +45,10 @@ class Json
         }
     }
 
-    public function exec($data,$type = self::JSON_ENCODE)
+    public function exec($data = null,$type = self::JSON_ENCODE)
     {
         $this->setType($type);
-        $this->data = $data;
+        $this->data = $data ?? $this->data;
         return $this->getResponse();
     }
 
