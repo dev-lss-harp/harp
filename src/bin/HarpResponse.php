@@ -108,6 +108,7 @@ class HarpResponse extends Response
     private $code = 204;
 
     private static $listResponse;
+    public static $debug = false;
 
 
     public function __construct(int $code = 204,Array $headers = [],Array $body = [],int $response = self::STREAM,string $version = '1.1')
@@ -661,23 +662,16 @@ class HarpResponse extends Response
         return $this;
     }
     
-    public function throwResponseException(Throwable $th,bool $debugException = false)
+    public function throwResponseException(Throwable $th)
     {        
-        $code = $th->getCode() >= 400 && $th->getCode() <= 599 ? $th->getCode() : 599;
+       $code = $th->getCode() >= 400 && $th->getCode() <= 599 ? $th->getCode() : 599;
 
-
-        $this->ByStatus([
+       $this->ByStatus([
             'response' => $th->getMessage(),
             'code' => $th->getCode(),
-            'file' => $th->getFile(),
-            'lineNumber' =>  $th->getLine()
+            'file' => self::$debugException ? $th->getFile() : $this->msgDebugDisabled,
+            'lineNumber' => self::$debugException ? $th->getLine() : $this->msgDebugDisabled
         ],$code);
-       /* $this->ByStatus([
-            'response' => $th->getMessage(),
-            'code' => $th->getCode(),
-            'file' => ($debugException || $this->debugException) ? $th->getFile() : $this->msgDebugDisabled,
-            'lineNumber' => ($debugException || $this->debugException) ? $th->getLine() : $this->msgDebugDisabled
-        ],$code);*/
 
         return $this;
     }
