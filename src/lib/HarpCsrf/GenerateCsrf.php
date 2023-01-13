@@ -3,7 +3,7 @@ namespace Harp\lib\HarpCsrf;
 
 use Harp\lib\HarpGuid\Guid;
 use League\Flysystem\Filesystem;
-use League\Flysystem\Local\LocalFilesystemAdapter;;
+use League\Flysystem\Local\LocalFilesystemAdapter;
 use Harp\lib\HarpJson\Json;
 
 class GenerateCsrf

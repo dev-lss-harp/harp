@@ -2,7 +2,6 @@
 namespace Harp\lib\HarpJson;
 
 use Exception;
-use Harp\bin\ArgumentException;
 
 class Json
 {
