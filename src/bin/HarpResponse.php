@@ -652,13 +652,6 @@ class HarpResponse extends Response
         $this->sendResponse($headers,$contents);
     }    
 
-    public function debugException(bool $debug = true)
-    {
-        $this->debugException = $debug;
-
-        return $this;
-    }
-    
     public function throwResponseException(Throwable $th)
     {        
        $code = $th->getCode() >= 400 && $th->getCode() <= 599 ? $th->getCode() : 599;
@@ -666,8 +659,8 @@ class HarpResponse extends Response
        $this->ByStatus([
             'response' => $th->getMessage(),
             'code' => $th->getCode(),
-            'file' => self::$debugException ? $th->getFile() : $this->msgDebugDisabled,
-            'lineNumber' => self::$debugException ? $th->getLine() : $this->msgDebugDisabled
+            'file' => self::$debug ? $th->getFile() : $this->msgDebugDisabled,
+            'lineNumber' => self::$debug ? $th->getLine() : $this->msgDebugDisabled
         ],$code);
 
         return $this;
