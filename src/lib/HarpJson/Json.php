@@ -25,7 +25,7 @@ class Json
         self::UNKNOWN_ERROR => 'Unknown error'
     ];
 
-    public function __construct($data,$type = self::JSON_ENCODE)
+    public function __construct($data = null,$type = self::JSON_ENCODE)
     {
         $this->setType($type);
 
@@ -45,7 +45,7 @@ class Json
         }
     }
 
-    public function exec($data = null,$type = self::JSON_ENCODE)
+    public function exec($type = self::JSON_ENCODE,$data = null)
     {
         $this->setType($type);
         $this->data = $data ?? $this->data;
@@ -133,19 +133,26 @@ class Json
 
     private function isJson($data)
     {
-        $s = false;
 
-        try 
-        {
-            $regex  = '`[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}`';
-            $s = preg_match($regex,$data);
-        } 
-        catch (\Throwable $th) 
-        {
-           $s = false;
-        }
+        //previous regex
+        //$regex  = '`[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}`';
 
-        return $s;
+        $regex = '
+            /
+            (?(DEFINE)
+                (?<number>   -? (?= [1-9]|0(?!\d) ) \d+ (\.\d+)? ([eE] [+-]? \d+)? )    
+                (?<boolean>   true | false | null )
+                (?<string>    " ([^"\\\\]* | \\\\ ["\\\\bfnrt\/] | \\\\ u [0-9a-f]{4} )* " )
+                (?<array>     \[  (?:  (?&json)  (?: , (?&json)  )*  )?  \s* \] )
+                (?<pair>      \s* (?&string) \s* : (?&json)  )
+                (?<object>    \{  (?:  (?&pair)  (?: , (?&pair)  )*  )?  \s* \} )
+                (?<json>   \s* (?: (?&number) | (?&boolean) | (?&string) | (?&array) | (?&object) ) \s* )
+            )
+            \A (?&json) \Z
+            /six   
+            ';
+        
+            return @preg_match($regex,$data);
     }
 
     private function jsonEncode($data)
