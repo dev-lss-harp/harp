@@ -75,7 +75,6 @@ class HarpResponse extends Response
         599 => 'Internal Exceptions'
     ];
 
-    //private const RESPONSE = 'RESPONSE';
     public const FAILURE = 'FAILURE';
     public const SEVERITY = 'SEVERITY';
 
@@ -629,8 +628,6 @@ class HarpResponse extends Response
 
         if($Json->getResponse())
         {
-            
-            //$result = $Json->exec($contents,Json::JSON_DECODE);
             $result = $contents;
         }
         else
