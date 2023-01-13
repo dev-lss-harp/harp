@@ -2,6 +2,8 @@
 namespace Harp\bin;
 
 //use Harp\bin\HarpServerRequest;
+
+use Exception;
 use Harp\bin\HarpController;
 use Harp\bin\ArgumentException;
 use Harp\bin\View;
@@ -190,7 +192,7 @@ class HarpProcess
     {
         if(!isset($route['path']))
         {
-            throw new ArgumentException('Path not found, impossible determinate the action method!',404);
+            throw new Exception('Path not found, impossible determinate the action method!',404);
         }
         
         $action = mb_substr(strrchr($route['path'],"/"),1);
@@ -276,7 +278,7 @@ class HarpProcess
   
                if(!($return instanceof HarpResponse) && !($return instanceof View))
                {
-                   throw new ArgumentException("Expected object of type {".(HarpResponse::class)."}");
+                   throw new Exception("Expected object of type {".(HarpResponse::class)."}",500);
                }
                else if($return instanceof HarpResponse)
                {
@@ -502,7 +504,7 @@ class HarpProcess
           
             if(!$instance instanceof HarpController)
             {
-                throw new ArgumentException('The controller must be an instance of HarpController class.',500);
+                throw new Exception('The controller must be an instance of HarpController class.',500);
             }
 
             $return = $this->executePlain($this->plainExecution,$instance);            

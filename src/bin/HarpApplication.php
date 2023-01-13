@@ -150,7 +150,7 @@ abstract class HarpApplication implements HarpApplicationInterface
              $error .= $msg; 
         }
 
-        throw new ArgumentException($error);
+        throw new Exception($error,500);
     }
 
     private function defineEncryptionKey()

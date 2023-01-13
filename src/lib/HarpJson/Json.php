@@ -1,6 +1,7 @@
 <?php 
 namespace Harp\lib\HarpJson;
 
+use Exception;
 use Harp\bin\ArgumentException;
 
 class Json
@@ -107,14 +108,14 @@ class Json
             )
             {
                 
-                $Sae = new ArgumentException(
+                $Sae = new Exception(
                     $this->responseStatus[json_last_error()], 
                     500, 
                 );
             }
             else if(!isset($this->responseStatus[json_last_error()]))
             {
-                $Sae = new ArgumentException(
+                $Sae = new Exception(
                     $this->responseStatus[self::UNKNOWN_ERROR], 
                     500,  
                 );  
@@ -133,10 +134,6 @@ class Json
 
     private function isJson($data)
     {
-
-        //previous regex
-        //$regex  = '`[{\[]{1}([,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]|".*?")+[}\]]{1}`';
-
         $regex = '
             /
             (?(DEFINE)

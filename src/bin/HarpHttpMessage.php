@@ -1,13 +1,12 @@
 <?php
 namespace Harp\bin;
 
-use Exception;
 use h4cc\Multipart\ParserSelector;
 use Harp\bin\HarpApplicationInterface;
 use Harp\bin\HarpServerRequest;
-use Harp\bin\ArgumentException;
 use Harp\enum\RouteEnum;
 use Harp\lib\HarpJson\Json;
+use Exception;
 
 class HarpHttpMessage
 {
@@ -111,7 +110,7 @@ class HarpHttpMessage
 
             if($Json->getResponse())
             {
-                $dtJsonArray = $Json->exec($contents,Json::JSON_DECODE);
+                $dtJsonArray = $Json->exec(Json::JSON_DECODE,$contents);
 
                 $this->body = $dtJsonArray;
             }
