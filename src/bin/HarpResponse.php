@@ -107,6 +107,8 @@ class HarpResponse extends Response
     private $reason = 'No Content';
     private $code = 204;
 
+    private static $listResponse;
+
 
     public function __construct(int $code = 204,Array $headers = [],Array $body = [],int $response = self::STREAM,string $version = '1.1')
     {       
@@ -499,7 +501,7 @@ class HarpResponse extends Response
 
             if($json->getResponse())
             {
-                $result = $json->exec($contents,Json::JSON_DECODE);
+                $result = $json->exec(Json::JSON_DECODE,$contents);
             }
             else
             {
@@ -510,34 +512,47 @@ class HarpResponse extends Response
         return $result;
     }
 
-    public function saveResponse(string $key,HarpResponse $response)
+    public static function saveResponse(string $key,HarpResponse $response)
     {
-        $this->allResponses[$key] = $response->getResponse();
-
-        return $this;
+        self::$listResponse[$key] = $response->getResponse();
     }
 
-    public function getSavedResponse(string $key)
+    public static function getResponses(string $key = null)
     {
-        $result = null;
 
-        if(!empty($this->allResponses[$key]))
+        $Json = new Json();
+
+        if(empty($key))
         {
-            $contents = $this->allResponses[$key];
-
-            $json = new Json($contents,Json::IS_JSON);
-
-            if($json->getResponse())
+            $list = [];
+            foreach($this->allResponses as $k => $r)
             {
-                $result = $json->exec($contents,Json::JSON_DECODE);
+                if($Json->exec(Json::IS_JSON,$r))
+                {
+                    $list[$key] = $Json->exec(Json::JSON_DECODE,$r);
+                }
+                else
+                {
+                    $list[$key] = '';
+                    parse_str($r,$list[$key]);
+                }
+            }
+        }
+        else if(array_key_exists($key,self::$listResponse))
+        {
+            if($Json->exec(Json::IS_JSON,self::$listResponse[$key]))
+            {
+                return $Json->exec(Json::JSON_DECODE,self::$listResponse[$key]);
             }
             else
             {
-                parse_str($contents,$result);
+                $contents = '';
+                parse_str(self::$listResponse[$key],$contents);
+                return $contents;
             }
         }
 
-        return $result;
+        throw new Exception('There is no responses available!',500);
     }
 
     private function createResponseStream()

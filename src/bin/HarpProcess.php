@@ -437,7 +437,7 @@ class HarpProcess
                         else if($response instanceof HarpResponse)
                         {
                       
-                            $response->saveResponse($plain['method'],$response);
+                            HarpResponse::saveResponse($plain['method'],$response);
                             
                             if(!$response->hasHeader(HarpResponse::FAILURE))
                             {
