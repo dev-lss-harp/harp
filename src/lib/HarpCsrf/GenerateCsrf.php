@@ -11,18 +11,11 @@ class GenerateCsrf
     private const directory = 'csrf'; 
     private const filename = 'csrf.json';
     private const key = 'csrf_token';
-    private Filesystem $FileSystemDir;
-    private Filesystem $FileSystemFile;
+    private Filesystem $FileSystem;
 
     public function __construct($path)
     {
-        $this->FileSystemDir = new Filesystem(new LocalFilesystemAdapter($path));
-        $this->FileSystemFile = new Filesystem(new LocalFilesystemAdapter(sprintf('%s%s%s',$path,DIRECTORY_SEPARATOR,self::directory)));
-
-        if(!$this->FileSystemDir->directoryExists(self::directory))
-        {
-            $this->FileSystemDir->createDirectory(self::directory);
-        }    
+        $this->FileSystem = new Filesystem(new LocalFilesystemAdapter(sprintf('%s%s%s',$path,DIRECTORY_SEPARATOR,self::directory)));
     }
 
     public function generate(?string $key = null,int $expired = 45)
@@ -34,9 +27,9 @@ class GenerateCsrf
 
         $strFile = "{}";
 
-        if($this->FileSystemFile->fileExists(self::filename))
+        if($this->FileSystem->fileExists(self::filename))
         {
-            $strFile = $this->FileSystemFile->read(self::filename);
+            $strFile = $this->FileSystem->read(self::filename);
         }
 
         $json = (new Json($strFile,Json::JSON_DECODE))
@@ -48,7 +41,7 @@ class GenerateCsrf
             'expired' => $DateExpired->format('Y-m-d H:i:s')
         ]; 
 
-        $this->FileSystemFile->write(
+        $this->FileSystem->write(
             sprintf('%s%s',DIRECTORY_SEPARATOR,self::filename),
             json_encode($json)
         ); 
