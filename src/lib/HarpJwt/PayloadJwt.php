@@ -67,7 +67,7 @@ class PayloadJwt
         return (!empty($key) && array_key_exists($key,$this->payload)) ? $this->payload[$key] : null;
     }
 
-    public function getPayload($key)
+    public function getPayload()
     {
         return $this->payload;
     }
