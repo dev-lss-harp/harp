@@ -18,6 +18,7 @@ abstract class EntityHandler
     private $mandatoryProperties = [];
     private $rotateToParams = [];
     private $entityWhere = [];
+    private $columns = ["*"];
     private $resultSet = 
     [
         'model' => false, 
@@ -732,6 +733,13 @@ abstract class EntityHandler
         return $this;
     }
 
+    public function setColumns(Array $columns)
+    {
+        $this->columns = $columns;
+
+        return $this;
+    }
+
     public function get(Model $Mapper)
     {
         $obj =  $this;
@@ -774,7 +782,7 @@ abstract class EntityHandler
         }
         else
         {
-            $response = $response->get();
+            $response = $response->get($this->columns);
         }
 
   
