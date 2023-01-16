@@ -31,8 +31,11 @@ class Mix
                 case 'h':
                     $result = $diff->days * 24;
                 break;
+                case 'i':
+                    $result = ($diff->days * 24 * 60) + ($diff->h * 60) + $diff->i;
+                break;
                 default:
-                    throw new Exception('You must enter one of the {d,m,y,h} parameters for {fraction}!',500);
+                    throw new Exception('You must enter one of the {d,m,y,h,i} parameters for {fraction}!',500);
             }
 
             $result *= ($now >= $date) ? -1 : 1;
