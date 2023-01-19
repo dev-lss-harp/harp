@@ -10,6 +10,7 @@ class Json
     public const JSON_IS_DECODABLE = 2;
     public const JSON_IS_ENCODABLE = 3;
     public const IS_JSON = 200;
+    public const IS_JSON_NON_SCALAR = 300;
     private const UNKNOWN_ERROR = 100;
     private $data;
     private $type;
@@ -80,7 +81,10 @@ class Json
                     break;    
                 case self::IS_JSON:
                     $response = $this->isJson($this->data);
-                    break;                                               
+                    break; 
+                case self::IS_JSON_NON_SCALAR:
+                    $response = $this->isJsonNonScalar($this->data);
+                    break;                                                    
                 default:
                     $response = $this->jsonEncode($this->data);
                  break;
@@ -129,6 +133,17 @@ class Json
         {
             throw $th;
         }
+    }
+
+
+    private function isJsonNonScalar($data) 
+    {
+        if(preg_match('`(\{|\[)`',$data) && @json_decode($data) && json_last_error() === JSON_ERROR_NONE)
+        {
+            return true;
+        }
+       
+        return false;
     }
 
     private function isJson($data)

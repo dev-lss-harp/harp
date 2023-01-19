@@ -497,7 +497,7 @@ class HarpResponse extends Response
 
         if($decoded)
         {
-            $json = new Json($contents,Json::IS_JSON);
+            $json = new Json($contents,Json::IS_JSON_NON_SCALAR);
 
             if($json->getResponse())
             {
@@ -621,14 +621,15 @@ class HarpResponse extends Response
     public function json()
     {
         $contents = $this->getResponse();
-
-        $Json = new Json($contents,Json::IS_JSON);
-       
+        
+        $Json = new Json($contents,Json::IS_JSON_NON_SCALAR);
+        
         $result = '{}';
 
         if($Json->getResponse())
         {
             $result = $contents;
+
         }
         else
         {
