@@ -18,6 +18,7 @@ abstract class EntityHandler
     private $mandatoryProperties = [];
     private $rotateToParams = [];
     private $entityWhere = [];
+    private $orderBy = [];
     private $columns = ["*"];
     private $resultSet = 
     [
@@ -207,6 +208,12 @@ abstract class EntityHandler
     private function keyEntity($name)
     {
         return sprintf('%sEntity',$name);
+    }
+
+    public function orderBy(Array $order = [])
+    {
+        $this->orderBy = $order;
+        return $this;
     }
 
     public function useWhere(Array $entityWhere)
@@ -740,6 +747,21 @@ abstract class EntityHandler
         return $this;
     }
 
+    private function addOrderBy($StaticMapper)
+    {
+        $response = null;
+
+        if(!empty($this->orderBy))
+        {
+            foreach($this->orderBy as $column => $order)
+            {
+                $response = $StaticMapper::orderBy($column,$order);
+            }
+        }
+
+        return $response;
+    }
+
     public function get(Model $Mapper)
     {
         $obj =  $this;
@@ -773,19 +795,20 @@ abstract class EntityHandler
             else if(!empty($this->pagination))
             {
                 $response = $StaticMapper::skip($this->pagination['offset'])->take($this->pagination['limit']);
-            } 
+            }
         }
+
+        $response = $this->addOrderBy($StaticMapper);
 
         if(empty($response))
         {
-            $response = $StaticMapper::all();
+            $response = $StaticMapper::all($this->columns);
         }
         else
-        {
+        { 
             $response = $response->get($this->columns);
         }
-
-  
+      
         if($this->resultSet['model'])
         {
             return $response;
