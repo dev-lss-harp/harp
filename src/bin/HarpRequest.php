@@ -17,17 +17,22 @@ use Harp\bin\HarpRequestHeaders;
 
 class HarpRequest
 {
-    protected $HarpServer;
+    protected $HarpServerConfig;
     protected $HarpRequestHeaders;
     
-    protected function __construct(HarpServer $HarpServer,HarpRequestHeaders $HarpRequestHeaders)
+    protected function __construct(HarpServerConfig $HarpServerConfig,HarpRequestHeaders $HarpRequestHeaders)
     {
-        $this->HarpServer = $HarpServer;
+        $this->HarpServerConfig = $HarpServerConfig;
         $this->HarpRequestHeaders = $HarpRequestHeaders;
     }
     
-    public function getServerConfig() : HarpServer
+    public function getServerConfig() : HarpServerConfig
     {
-        return $this->HarpServer;
+        return $this->HarpServerConfig;
+    }
+
+    public function getServerHeaderConfig()
+    {
+        return $this->HarpRequestHeaders->getServerHeaderConfig();
     }
 }

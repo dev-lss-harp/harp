@@ -6,9 +6,8 @@ use Exception;
 use Harp\bin\HarpProcess;
 use Harp\bin\HarpHttpMessage;
 use Harp\bin\HarpRequestHeaders;
-use Harp\bin\HarpServer;
+use Harp\bin\HarpServerConfig;
 use Harp\bin\HarpServerRequest;
-use Harp\enum\__View;
 use Harp\enum\AppEnum;
 use Harp\enum\PathEnum;
 use Harp\enum\ProjectEnum;
@@ -20,6 +19,8 @@ use Throwable;
 class HarpRoute
 {
     private static $instance;
+    private $HarpServerConfig;
+    private $HarpRequestHeaders;
     private $ServerRequest;
     private $routeCurrent;
     private $translateDomain;
@@ -42,9 +43,9 @@ class HarpRoute
         {
             $this->translateDomain = $translateDomain;
 
-            $this->HarpServer = new HarpServer();
+            $this->HarpServerConfig = new HarpServerConfig();
             $this->HarpRequestHeaders = new HarpRequestHeaders();
-            $this->ServerRequest = new HarpServerRequest($this->HarpServer,$this->HarpRequestHeaders);
+            $this->ServerRequest = new HarpServerRequest($this->HarpServerConfig,$this->HarpRequestHeaders);
             $this->apps = [];
 
             $this->basePath = dirname(dirname(dirname(dirname(dirname(__DIR__)))));
@@ -906,6 +907,11 @@ class HarpRoute
                 404
             );
         } 
+    }
+
+    public function getServerHeaderConfig()
+    {
+        return $this->HarpRequestHeaders->getServerHeaderConfig();
     }
 
     public static function load($translateDomain = false)

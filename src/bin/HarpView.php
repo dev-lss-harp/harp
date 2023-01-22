@@ -7,7 +7,7 @@ namespace Harp\bin;
  * @author t-lsilva
  */
 use Harp\bin\HarpApplicationInterface;
-use Harp\bin\HarpServer;
+use Harp\bin\HarpServerConfig;
 use Harp\enum\RouteEnum;
 use Harp\enum\ViewEnum;
 
@@ -29,7 +29,7 @@ abstract class HarpView
         $this->viewPaths[ViewEnum::Action->value] = $viewName;
     }
     
-    private function renderView(HarpApplicationInterface $Application, HarpServer $ServerConfig)
+    private function renderView(HarpApplicationInterface $Application, HarpServerConfig $ServerConfig)
     {
         $this->Application = $Application;
         $this->ServerConfig = $ServerConfig;

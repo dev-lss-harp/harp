@@ -13,17 +13,20 @@
  */
 namespace Harp\bin;
 
-use Harp\bin\HarpServer;
+use Harp\bin\HarpServerConfig;
 use Harp\bin\HarpRequestHeaders;
 
 
 class HarpServerRequest extends HarpRequest implements HarpPsr7Interface
 {
     protected $GuzzleServerRequest;
+    protected $HarpServerConfig;
      
-    public function __construct(HarpServer $HarpServer, HarpRequestHeaders $HarpRequestHeaders)
+    public function __construct(HarpServerConfig $HarpServerConfig, HarpRequestHeaders $HarpRequestHeaders)
     {
-        parent::__construct($HarpServer,$HarpRequestHeaders); 
+        $this->HarpServerConfig = $HarpServerConfig;
+
+        parent::__construct($this->HarpServerConfig,$HarpRequestHeaders); 
         
         $this->GuzzleServerRequest = \GuzzleHttp\Psr7\ServerRequest::fromGlobals();
     }

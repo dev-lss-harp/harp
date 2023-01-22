@@ -17,17 +17,25 @@ namespace Harp\bin;
 class HarpRequestHeaders
 {
    private $headers = [];
+   private $ServerHeaderConfig;
    
-   public function __construct()
-   {
-        if (function_exists('getallheaders')) 
-        { 
-            $this->headers = getallheaders();
-        }
-   }
+    public function __construct()
+    {
+            if (function_exists('getallheaders')) 
+            { 
+                $this->headers = getallheaders();
+            }
+
+            $this->ServerHeaderConfig = HarpServerHeaderConfig::getInstance();
+    }
    
-   public function getHeaders()
-   {
-       return $this->headers;
-   }
+    public function getHeaders()
+    {
+        return $this->headers;
+    }
+
+    public function getServerHeaderConfig()
+    {
+        return $this->ServerHeaderConfig;
+    }
 }

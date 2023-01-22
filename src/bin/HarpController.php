@@ -8,7 +8,7 @@ abstract class HarpController
     private static $properties;
     protected $Application;
     protected $ServerRequest;
-    
+
     protected function __construct()
     {   
         $this->Application = self::$properties['Application'];
@@ -35,14 +35,6 @@ abstract class HarpController
         $this->clearHeaders();
         $this->clearBuffer();
         exit(header('location:'.$url));
-    }
-
-    protected function generateCsrfToken()
-    {
-            $sessionProvider = new \EasyCSRF\NativeSessionProvider();
-            $easyCSRF = new \EasyCSRF\EasyCSRF($sessionProvider);
-            $token = $easyCSRF->generate($this->Application->getIdentifier());
-            return $token;
     }
     
     private static function inject(HarpApplicationInterface $Application)

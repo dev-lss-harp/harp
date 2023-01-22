@@ -19,17 +19,11 @@ class HarpHttpMessage
     { 
         $this->Application = $Application;
         $this->HarpServerRequest = $ServerRequest;
-
+        $this->HarpServerRequest->getServerHeaderConfig()
+                                ->run();
         $this->parseBodyParams();
      
         $this->parsedQuery($this->Application);
-
-        if(array_key_exists('X-XSS-Protection',$this->body))
-        {
-            $protection = (int)$_POST['X-XSS-Protection'];
-          
-            header("X-XSS-Protection:".$protection);
-        }
     }
 
     private function parseFormData($contentType)
