@@ -262,7 +262,7 @@ abstract class EntityHandler
         $data = $this->putPrefix($data,$obj,$this->getEntityShortName($obj));
 
         $this->data = empty($this->data) ? $data : $this->data;
-      
+
         $shortEntityName = $this->getEntityShortName($obj);
         $fullEntityName = $this->entities[$shortEntityName];
         $props = $this->props[$fullEntityName];
@@ -747,10 +747,8 @@ abstract class EntityHandler
         return $this;
     }
 
-    private function addOrderBy($StaticMapper)
+    private function addOrderBy($StaticMapper,$response)
     {
-        $response = null;
-
         if(!empty($this->orderBy))
         {
             foreach($this->orderBy as $column => $order)
@@ -758,7 +756,7 @@ abstract class EntityHandler
                 $response = $StaticMapper::orderBy($column,$order);
             }
         }
-
+ 
         return $response;
     }
 
@@ -781,7 +779,6 @@ abstract class EntityHandler
             $props = $this->props[$fullEntityName]; 
             $params = !empty($this->entityWhere) ? $this->parseParams($this->entityWhere,$props,$obj) : $this->parseParams($data,$props,$obj);
 
-
             $this->pagination = $this->paginator($data[$shortEntityName],$StaticMapper::count());  
            
             if(!empty($params) && !empty($this->pagination))
@@ -798,7 +795,7 @@ abstract class EntityHandler
             }
         }
 
-        $response = $this->addOrderBy($StaticMapper);
+        $response = $this->addOrderBy($StaticMapper,$response);
 
         if(empty($response))
         {
