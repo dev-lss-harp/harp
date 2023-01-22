@@ -12,6 +12,7 @@ class ValidateCsrf
     private const directory = 'csrf'; 
     private const filename = 'csrf.json';
     private const key = 'csrf_token';
+    private $content = [];
     private Filesystem $FileSystemFile;
     
 
@@ -25,7 +26,7 @@ class ValidateCsrf
         }
     } 
 
-    public function validate($token,$key = null)
+    public function get($key = null)
     {
         $key = $key ?? self::key;
 
@@ -38,36 +39,44 @@ class ValidateCsrf
             throw new Exception(sprintf('Content in file {%s} is not a valid json!',self::filename),500);
         }
         
-        $content = $Json->exec(Json::JSON_DECODE);
-     
-        
+        $this->content = $Json->exec(Json::JSON_DECODE);
+
+        if(!array_key_exists($key,$this->content))
+        {
+            throw new Exception(sprintf('Access key {%s} invalid!',$key),401);
+        }
+
+        return $this->content[$key];
+    }
+
+    public function validate($token,$key = null)
+    {
+        $content = $this->get($key = null);
        
         if
             (
-                !\array_key_exists($key,$content) 
-                || 
                 trim($token) != trim($content[$key]['token'])
                 ||
                 $expired = (new DateTime()) > (new DateTime($content[$key]['expired']))
             )
         {
             if($expired)
-                $this->delete($key,$content);
+                $this->delete($key);
 
             throw new Exception('CSRF token invalid!',500);
         }
 
     }
 
-    private function delete($key,$content)
+    public function delete($key)
     {
-        if(array_key_exists($key,$content))
+        if(array_key_exists($key,$this->content))
         {
-            unset($content[$key]);
+            unset($this->content[$key]);
 
             $this->FileSystemFile->write(
                 sprintf('%s%s',DIRECTORY_SEPARATOR,self::filename),
-                json_encode($content)
+                json_encode($this->content)
             ); 
         }
     }

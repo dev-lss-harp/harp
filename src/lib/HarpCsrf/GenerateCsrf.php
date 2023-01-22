@@ -16,6 +16,19 @@ class GenerateCsrf
     public function __construct($path)
     {
         $this->FileSystem = new Filesystem(new LocalFilesystemAdapter(sprintf('%s%s%s',$path,DIRECTORY_SEPARATOR,self::directory)));
+
+        $this->createIfNotExists();
+    }
+
+    private function createIfNotExists()
+    {
+        if(!$this->FileSystem->fileExists(self::filename))
+        {
+            $this->FileSystem->write(
+                sprintf('%s%s',DIRECTORY_SEPARATOR,self::filename),
+                json_encode([],JSON_PRETTY_PRINT)
+            ); 
+        }
     }
 
     public function generate(?string $key = null,int $expired = 45)
@@ -43,7 +56,7 @@ class GenerateCsrf
 
         $this->FileSystem->write(
             sprintf('%s%s',DIRECTORY_SEPARATOR,self::filename),
-            json_encode($json)
+            json_encode($json,JSON_PRETTY_PRINT)
         ); 
 
         return $json[$key]['token'];
