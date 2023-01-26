@@ -28,6 +28,7 @@ class ValidateCsrf
 
     public function get($key = null)
     {
+        dd($key,$this->content);
         $key = $key ?? self::key;
 
         $strFile = $this->FileSystemFile->read(self::filename);
@@ -51,7 +52,7 @@ class ValidateCsrf
 
     public function validate($token,$key = null)
     {
-        $content = $this->get($key = null);
+        $content = $this->get($key);
        
         if
             (
