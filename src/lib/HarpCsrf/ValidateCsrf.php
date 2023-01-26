@@ -28,14 +28,13 @@ class ValidateCsrf
 
     public function get($key = null)
     {
-        dd($key,$this->content);
         $key = $key ?? self::key;
-
+  
         $strFile = $this->FileSystemFile->read(self::filename);
 
         $Json = new Json();
 
-        if(!$Json->exec(Json::IS_JSON,$strFile))
+        if(!$Json->exec(Json::IS_JSON_NON_SCALAR,$strFile))
         {
             throw new Exception(sprintf('Content in file {%s} is not a valid json!',self::filename),500);
         }
@@ -53,10 +52,10 @@ class ValidateCsrf
     public function validate($token,$key = null)
     {
         $content = $this->get($key);
-       
+
         if
             (
-                trim($token) != trim($content[$key]['token'])
+                trim($token) != trim($content['token'])
                 ||
                 $expired = (new DateTime()) > (new DateTime($content[$key]['expired']))
             )
