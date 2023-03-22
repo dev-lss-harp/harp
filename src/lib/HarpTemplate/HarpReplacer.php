@@ -186,7 +186,14 @@ class HarpReplacer
 
         if(empty($result[0]))
         {
-            $keys = ['{{without-replacement}}'];
+            $keys = [
+                        sprintf
+                        (
+                            '%swithout-replacement%s',
+                            $this->Template->getFirstInterpolationSymbol(),
+                            $this->Template->getLastInterpolationSymbol()
+                        )
+                    ];
         }
 
         return $keys;
@@ -194,9 +201,15 @@ class HarpReplacer
     
     public function parseFile($key)
     {
+        $symbolFirst = $this->Template->getFirstInterpolationSymbol();
+        $symbolLast = $this->Template->getLastInterpolationSymbol();
+
         $params = mb_substr(str_repeat('%s|',count($this->replacementMethods)),0,-1);
 
-        $pattern = sprintf('`[{]{2}(Replacer[@]('.$params.').*?)[:[^}]{2}`is',...array_values($this->replacementMethods));
+        $pattern = sprintf
+        (
+            sprintf('`[%s]{2}(Replacer[@]('.$params.').*?)[:[^%s]{2}`is',$symbolFirst,$symbolLast),...array_values($this->replacementMethods)
+        );
         
         $result = [];
      
@@ -240,7 +253,14 @@ class HarpReplacer
 
         if(!empty($key))
         {
-            $pattern = sprintf('`{{Replacer%s:%s}}`',self::WORD_KEY_ANY,$key);
+            $pattern = sprintf
+            (
+                '`%sReplacer%s:%s%s`',
+                $this->Template->getFirstInterpolationSymbol(),
+                self::WORD_KEY_ANY,
+                $key,
+                $this->Template->getLastInterpolationSymbol()
+            );
             preg_match_all($pattern,$file,$result);
 
             if(isset($result[0]))

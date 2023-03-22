@@ -43,7 +43,17 @@ class HarpRepeater
     
     public function build($keyFile,$key,$list)
     {
-        $pattern = '`[{]{2}(Repeater\b@'.$key.'\b)[}]{2}(.*?)[{]{2}[/]{1}(Repeater\b@'.$key.'\b)[}]{2}`is';
+        $symbolFirst = $this->Template->getFirstInterpolationSymbol();
+        $symbolLast = $this->Template->getLastInterpolationSymbol();
+
+        $pattern = sprintf
+                    (
+                        '`[%s]{2}(Repeater\b@'.$key.'\b)[%s]{2}(.*?)[%s]{2}[/]{1}(Repeater\b@'.$key.'\b)[%s]{2}`is',
+                        $symbolFirst,
+                        $symbolLast,
+                        $symbolFirst,
+                        $symbolLast
+                    );
 
         $result = [];
 
@@ -70,7 +80,12 @@ class HarpRepeater
                         foreach($item as $k => $val)
                         {
                       
-                            $kr = '{{'.$element[1].':'.$k.'}}';
+                            $kr = sprintf
+                            (
+                                '%s'.$element[1].':'.$k.'%s',
+                                $this->Template->getFirstInterpolationSymbol(),
+                                $this->Template->getLastInterpolationSymbol()
+                            );
                             $frag = str_ireplace([$kr],[$val],$frag);
                         }
                 }

@@ -30,6 +30,29 @@ class ValidateCsrf
     {
         $key = $key ?? self::key;
   
+        /*$strFile = $this->FileSystemFile->read(self::filename);
+
+        $Json = new Json();
+
+        if(!$Json->exec(Json::IS_JSON_NON_SCALAR,$strFile))
+        {
+            throw new Exception(sprintf('Content in file {%s} is not a valid json!',self::filename),500);
+        }
+        
+        $this->content = $Json->exec(Json::JSON_DECODE);*/
+
+        $this->contents();
+
+        if(!array_key_exists($key,$this->content))
+        {
+            throw new Exception(sprintf('Access key {%s} invalid!',$key),401);
+        }
+
+        return $this->content[$key];
+    }
+
+    private function contents()
+    {
         $strFile = $this->FileSystemFile->read(self::filename);
 
         $Json = new Json();
@@ -41,12 +64,24 @@ class ValidateCsrf
         
         $this->content = $Json->exec(Json::JSON_DECODE);
 
-        if(!array_key_exists($key,$this->content))
-        {
-            throw new Exception(sprintf('Access key {%s} invalid!',$key),401);
-        }
+        return $this->content;
+    }
 
-        return $this->content[$key];
+    public function deleteAllExpired()
+    {
+        $this->contents();
+
+        foreach($this->content as $key => $csrf)
+        {
+            $Expired = new DateTime($csrf['expired']);
+            $Expired->modify(sprintf("+%s minutes",10));
+
+            if((new DateTime()) > $Expired)
+            {
+                $this->delete($key);
+            }
+        }
+       
     }
 
     public function validate($token,$key = null)
@@ -57,7 +92,7 @@ class ValidateCsrf
             (
                 trim($token) != trim($content['token'])
                 ||
-                $expired = (new DateTime()) > (new DateTime($content[$key]['expired']))
+                $expired = (new DateTime()) > (new DateTime($content['expired']))
             )
         {
             if($expired)
@@ -70,6 +105,7 @@ class ValidateCsrf
 
     public function delete($key)
     {
+        $this->contents();
         if(array_key_exists($key,$this->content))
         {
             unset($this->content[$key]);

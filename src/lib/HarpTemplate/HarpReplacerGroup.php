@@ -15,7 +15,14 @@ class HarpReplacerGroup
     public function build($keyFile,$nameGroup,$list)
     {
         
-        $pattern = '`(?:{{(Replacer@group:'.preg_quote($nameGroup).'\b)}})(.*?)(?:{{[\/]Replacer@group:'.preg_quote($nameGroup).'\b}})`is';
+        $pattern = sprintf
+                        (
+                            '`(?:%s(Replacer@group:'.preg_quote($nameGroup).'\b)%s)(.*?)(?:%s[\/]Replacer@group:'.preg_quote($nameGroup).'\b%s)`is',
+                            $this->Template->getFirstInterpolationSymbol(),
+                            $this->Template->getLastInterpolationSymbol(),
+                            $this->Template->getFirstInterpolationSymbol(),
+                            $this->Template->getLastInterpolationSymbol()
+                        );
 
         $result = [];
 
@@ -35,13 +42,21 @@ class HarpReplacerGroup
                {
                    foreach($item as $key => $val)
                    {
-                       $sKey = '{{'.$result[1].':'.$key.'}}';
+                       $sKey = sprintf(
+                                            '%s'.$result[1].':'.$key.'%s',
+                                            $this->Template->getFirstInterpolationSymbol(),
+                                            $this->Template->getLastInterpolationSymbol()
+                                        );
                        $frag = str_ireplace($sKey,$val,$frag); 
                    }
                }
                else
                {
-                       $sKey = '{{'.$result[1].':'.$k.'}}';
+                       $sKey = sprintf(
+                                        '%s'.$result[1].':'.$k.'%s',
+                                        $this->Template->getFirstInterpolationSymbol(),
+                                        $this->Template->getLastInterpolationSymbol()
+                                      );
                        $frag = str_ireplace($sKey,$item,$frag); 
                }
 
