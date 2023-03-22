@@ -18,6 +18,8 @@ class HarpTemplate
         private $Repeater;
         private $listTemplates = [];
         private $paths = [];
+        private $firstInterpolationSymbol = '{{';
+        private $lastInterpolationSymbol = '}}';     
         
         public function __construct(View $ViewObject)
         {
@@ -28,6 +30,24 @@ class HarpTemplate
             $this->Replacer = new HarpReplacer($this);
             $this->Repeater = new HarpRepeater($this);
         }
+
+        public function getFirstInterpolationSymbol()
+        {
+            return $this->firstInterpolationSymbol;
+        }
+
+        public function getLastInterpolationSymbol()
+        {
+            return $this->lastInterpolationSymbol;
+        }
+
+        public function setInterpolationSymbols($firstSymbol,$lastSymbol)
+        {
+            $this->firstInterpolationSymbol = $firstSymbol ?? $this->firstInterpolationSymbol;
+            $this->lastInterpolationSymbol = $lastSymbol ?? $this->lastInterpolationSymbol;
+        }
+
+
         
         public function sanitizeFiles($keyFile)
         {            
