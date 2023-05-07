@@ -83,7 +83,6 @@ class HarpResponse extends Response
     public const SEVERITY_WITHOUT = 0;
     public const FAILURE_POSITIVE = 1;
     public const FAILURE_WITHOUT = 0;
-    public $debugException = false;
     
     public const JSON = 1;
     public const STREAM = 0;
@@ -660,8 +659,22 @@ class HarpResponse extends Response
        $this->ByStatus([
             'response' => $th->getMessage(),
             'code' => $th->getCode(),
-            'file' => self::$debug ? $th->getFile() : $this->msgDebugDisabled,
-            'lineNumber' => self::$debug ? $th->getLine() : $this->msgDebugDisabled
+            'file' => $this->msgDebugDisabled,
+            'lineNumber' => $this->msgDebugDisabled
+        ],$code);
+
+        return $this;
+    }
+
+    public function throwResponseExceptionDebug(Throwable $th)
+    {        
+       $code = $th->getCode() >= 400 && $th->getCode() <= 599 ? $th->getCode() : 599;
+
+       $this->ByStatus([
+            'response' => $th->getMessage(),
+            'code' => $th->getCode(),
+            'file' => $th->getFile(),
+            'lineNumber' => $th->getLine()
         ],$code);
 
         return $this;

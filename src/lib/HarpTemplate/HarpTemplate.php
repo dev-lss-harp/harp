@@ -18,6 +18,8 @@ class HarpTemplate
         private $Repeater;
         private $listTemplates = [];
         private $paths = [];
+        private $pathLoadedFiles = [];
+        private $fileLoadedNames = [];
         private $firstInterpolationSymbol = '{{';
         private $lastInterpolationSymbol = '}}';     
         
@@ -43,6 +45,11 @@ class HarpTemplate
 
         public function setInterpolationSymbols($firstSymbol,$lastSymbol)
         {
+            if(mb_strlen($firstSymbol) > 2 || mb_strlen($lastSymbol) > 2)
+            {
+                throw new Exception('First and last symbol interpolation must contain a maximum of 2 characters!');
+            }
+            
             $this->firstInterpolationSymbol = $firstSymbol ?? $this->firstInterpolationSymbol;
             $this->lastInterpolationSymbol = $lastSymbol ?? $this->lastInterpolationSymbol;
         }
@@ -162,8 +169,9 @@ class HarpTemplate
                 $this->listTemplates[$key] = $fileKey;
              
                 $path = $this->definePath($directoryORFullPath,$fileName);
-            
+                $this->pathLoadedFiles[$key] = $path;
                 $this->properties->{$fileKey} = file_get_contents($path.'/'.$fileName);
+                $this->fileLoadedNames[$key] = $fileName;
 
                 $this->sanitizeFiles($fileKey);
     
@@ -275,5 +283,21 @@ class HarpTemplate
             $file = $this->getProperty($fKey);
 
             print($file);
+        }
+
+        public function compile($key,$directory)
+        {
+            $fKey = $this->getTemplateID($key);
+
+            $file = $this->getProperty($fKey);
+
+            $path = sprintf('%s/%s',$this->pathLoadedFiles[$key],$directory);
+
+            if(!is_dir($path))
+            {
+                mkdir($path);
+            }
+
+            file_put_contents(sprintf('%s/%s',$path,$this->fileLoadedNames[$key]),$file);
         }
 }

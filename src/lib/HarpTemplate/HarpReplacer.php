@@ -13,6 +13,7 @@ use Harp\bin\Enum;
 use Harp\enum\ViewEnum;
 use ReflectionMethod;
 use stdClass;
+use Symfony\Polyfill\Intl\Idn\Resources\unidata\Regex;
 
 class HarpReplacer
 {
@@ -47,45 +48,51 @@ class HarpReplacer
     private function propExec()
     {
         $args = func_get_args();
-   
-        $prop = $this->Template->getView()->getProperty($args[2]);
 
-        $value =  is_scalar($prop) ? $prop : null;
+        $k = $args[0];
+        $p1 = $args[1]['p1'];
+        $p2 = $args[1]['p2'];
 
-        $prop = is_array($prop) ? $prop : (($prop instanceof stdClass) ? (array)$prop : $prop);
-   
-        if(is_array($prop) && !empty($args[3]))
-        {
-           
-            $k = trim($args[3]);
-            $value = array_key_exists($k,$prop) ? $prop[$k] : null;
-        }
+        $data = $this->Template->getView()->getProperty($p1);
 
-        if(is_null($value))
+        $data = is_array($data) ? $data : (($data instanceof stdClass) ? (array)$data : $data);
+
+        $v = is_scalar($data) 
+        ? $data 
+        : 
+        (
+            !is_scalar($data) && !empty($p2) && array_key_exists($p2,$data)
+            ? $data[$p2]
+            : null
+        );
+
+        if(is_null($v))
         {
             throw new Exception('Failed to perform substitution for property {%s}, for this substitution primitive data or simple array are allowed!');
         }
-        
-        array_push($this->Template->getProperty('replacement')->replaceValues[$args[0]],$value); 
+
+        array_push($this->Template->getProperty('replacement')->replaceValues[$k],$v); 
     }
 
     private function constExec()
     {
         $args = func_get_args();
-        
+    
         $consts = $this->Template->getView()->getProperty(ViewEnum::ServerVar->value);
+   
+        $k = $args[0];
+        $p1 = $args[1]['p1'];
 
-        if(isset($consts[$args[2]]))
-        {
-            
-             array_push($this->Template->getProperty('replacement')->replaceValues[$args[0]],$consts[$args[2]]); 
+        if(isset($consts[$p1]))
+        { 
+             array_push($this->Template->getProperty('replacement')->replaceValues[$k],$consts[$p1]); 
         }
     }
 
     private function pathExec()
     {
         $args = func_get_args();
-        $relativePath = $args[2];
+        $relativePath = $args[1]['p1'];
 
         $fileName =  basename($relativePath);
     
@@ -124,7 +131,7 @@ class HarpReplacer
     {
         $args = func_get_args();
 
-        $ext = $args[2] ?? '';
+        $ext = $args[1]['p1'] ?? '';
 
         $routeCurrent = $this->Template->getView()->getProperty(ViewEnum::RouteCurrent->value);
 
@@ -143,42 +150,39 @@ class HarpReplacer
         }
     }
 
-    private function findValue($key,Array $parts)
+    private function findValue($key,$prop,$value)
     {        
         $this->Template->getProperty('replacement')->replaceValues[$key] = 
            !empty($this->Template->getProperty('replacement')->replaceValues[$key]) ?
            $this->Template->getProperty('replacement')->replaceValues[$key] : 
            [];
+        
+            if(in_array($prop,$this->replacementMethods))
+            {
+                $method = sprintf('%s%s',$prop,'Exec');
 
-           if(!empty($parts[1]))
-           {
-           
-                $prop = mb_substr(trim($parts[0]),1); 
-       
-                if(in_array($prop,$this->replacementMethods))
+                if(is_callable([$this,$method]))
                 {
-                    $method = sprintf('%s%s',$prop,'Exec');
-                
-                    if(is_callable([$this,$method]))
-                    {
-                        $RefMethod = new \ReflectionMethod($this,$method);
-                        $RefMethod->invokeArgs($this,[$key,...$parts]);
-                    }
+                    $complex = explode(':',$value);
+                    $RefMethod = new \ReflectionMethod($this,$method);
+                    $RefMethod->invokeArgs($this,[$key,['p1' => $complex[0],'p2' => $complex[1] ?? null]]);
                 }
-           }
+            }
+           
     }
     
-    private function parseTerm($key,$term)
-    {
-        $firstOcurrence = stristr($term, '@');
+    //private function parseTerm($key,$prop,$value)
+    //{
+       // $this->findValue($key,$prop,$value);
+        /*$firstOcurrence = stristr($term, '@');
 
         if($firstOcurrence !== false)
         {
             $parts = explode(':',$firstOcurrence);
-
+      dd($parts,$key);
             $this->findValue($key,$parts);
-        }
-    }
+        }*/
+   // }
 
     private function getKeys($result)
     {
@@ -206,26 +210,34 @@ class HarpReplacer
 
         $params = mb_substr(str_repeat('%s|',count($this->replacementMethods)),0,-1);
 
+        $ptn = sprintf
+        (
+            '`%s(Replacer[@](%s).*?):(.*?)%s{1}`',
+            $symbolFirst,
+            $params,
+            $symbolLast
+        );
+
         $pattern = sprintf
         (
-            sprintf('`[%s]{2}(Replacer[@]('.$params.').*?)[:[^%s]{2}`is',$symbolFirst,$symbolLast),...array_values($this->replacementMethods)
+            $ptn,...array_values($this->replacementMethods)
         );
-        
+
+
         $result = [];
      
         preg_match_all($pattern,$this->Template->getProperties()->{$key},$result);
 
-        if(isset($result[1]))
+        if(isset($result[3]))
         {
+            $this->Template->getProperty('replacement')->replaceKeys[$key] = [];
+            $keys = $this->getKeys($result);
+            $this->Template->getProperty('replacement')->replaceKeys[$key] = $keys;
 
-                $this->Template->getProperty('replacement')->replaceKeys[$key] = [];
-                $keys = $this->getKeys($result);
-                $this->Template->getProperty('replacement')->replaceKeys[$key] = $keys;
-                
-                foreach($result[1] as $term)
-                {
-                    $this->parseTerm($key,$term);
-                }
+            for($i = 0; $i < count($result[2]);++$i)
+            {
+                $this->findValue($key,$result[2][$i],$result[3][$i]);
+            }
         }
 
     }
@@ -261,6 +273,7 @@ class HarpReplacer
                 $key,
                 $this->Template->getLastInterpolationSymbol()
             );
+      
             preg_match_all($pattern,$file,$result);
 
             if(isset($result[0]))
@@ -279,12 +292,12 @@ class HarpReplacer
     public function build($key)
     {
         $fKey = $this->Template->getTemplateID($key);
-
+   
         $file = $this->Template->getProperty($fKey);
-
+     
         $keys = $this->Template->getProperty('replacement')->replaceKeys[$fKey]
                     ?? [];
-
+    
         $values = $this->Template->getProperty('replacement')->replaceValues[$fKey]
                     ?? [];
 
